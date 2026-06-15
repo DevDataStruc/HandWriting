@@ -22,6 +22,7 @@ public class LoginVO implements Serializable {
     @Schema(description = "Refresh Token")
     private String refreshToken;
 
+    @Builder.Default
     @Schema(description = "Token 类型")
     private String tokenType = "Bearer";
 

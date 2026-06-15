@@ -45,4 +45,10 @@ public class Role implements Serializable {
     @LastModifiedDate
     @Column(name = "update_time")
     private LocalDateTime updateTime;
+
+    /** 业务用便捷构造器：仅指定 code 与 name */
+    public Role(String code, String name) {
+        this.code = code;
+        this.name = name;
+    }
 }

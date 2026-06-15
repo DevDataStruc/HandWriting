@@ -34,4 +34,10 @@ public class UserRole implements Serializable {
 
     @Column(name = "create_time", nullable = false, updatable = false)
     private LocalDateTime createTime = LocalDateTime.now();
+
+    /** 业务用便捷构造器 */
+    public UserRole(Long userId, Long roleId) {
+        this.userId = userId;
+        this.roleId = roleId;
+    }
 }
