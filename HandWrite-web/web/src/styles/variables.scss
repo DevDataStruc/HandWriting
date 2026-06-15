@@ -1,0 +1,116 @@
+// =============================================================================
+// 浅色主题（用户端 portal / sample / auth）— 微交互 + 手写友好
+// =============================================================================
+
+// 主题主色（teal 系）
+$color-primary: #0D9488;
+$color-primary-light: #14B8A6;
+$color-primary-lighter: #5EEAD4;
+$color-primary-dark: #0F766E;
+$color-primary-darker: #134E4A;
+
+// 中性色
+$color-secondary: #14B8A6;
+$color-cta: #F97316;
+$color-cta-light: #FB923C;
+$color-cta-dark: #EA580C;
+
+// 背景
+$bg-base: #F0FDFA;
+$bg-elevated: #FFFFFF;
+$bg-muted: #CCFBF1;
+$bg-overlay: rgba(13, 148, 136, 0.06);
+
+// 文字
+$text-primary: #134E4A;
+$text-regular: #115E59;
+$text-secondary: #5F7975;
+$text-placeholder: #94A3B8;
+$text-inverse: #FFFFFF;
+$text-disabled: #CBD5E1;
+
+// 边框
+$border-base: #CCFBF1;
+$border-light: #E0F2F1;
+$border-strong: #5EEAD4;
+
+// 状态色
+$color-success: #10B981;
+$color-warning: #F59E0B;
+$color-danger: #EF4444;
+$color-info: #3B82F6;
+
+// 阴影
+$shadow-xs: 0 1px 2px 0 rgba(13, 78, 74, 0.04);
+$shadow-sm: 0 1px 3px 0 rgba(13, 78, 74, 0.08), 0 1px 2px 0 rgba(13, 78, 74, 0.04);
+$shadow-md: 0 4px 6px -1px rgba(13, 78, 74, 0.1), 0 2px 4px -1px rgba(13, 78, 74, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(13, 78, 74, 0.1), 0 4px 6px -2px rgba(13, 78, 74, 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(13, 78, 74, 0.12), 0 10px 10px -5px rgba(13, 78, 74, 0.04);
+$shadow-2xl: 0 25px 50px -12px rgba(13, 78, 74, 0.25);
+
+// 圆角
+$radius-xs: 4px;
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-2xl: 24px;
+$radius-full: 9999px;
+
+// 字体
+$font-family-base: 'Baloo 2', 'Comic Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+  'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+$font-family-cn: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Source Han Sans CN', sans-serif;
+$font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-base: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 30px;
+$font-size-4xl: 36px;
+
+$line-height-tight: 1.25;
+$line-height-base: 1.5;
+$line-height-relaxed: 1.75;
+
+// 间距
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+$spacing-3xl: 64px;
+
+// 断点
+$breakpoint-xs: 480px;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1536px;
+
+// 布局
+$header-height: 60px;
+$sidebar-width: 220px;
+$sidebar-width-collapsed: 64px;
+$footer-height: 56px;
+
+// 动画
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+// Z-Index
+$z-dropdown: 1000;
+$z-sticky: 1020;
+$z-fixed: 1030;
+$z-modal-backdrop: 1040;
+$z-modal: 1050;
+$z-popover: 1060;
+$z-tooltip: 1070;
+$z-toast: 1080;

@@ -1,0 +1,95 @@
+// =============================================================================
+// 全局样式入口
+// =============================================================================
+
+@use './variables.scss' as *;
+@use './reset.scss';
+@use './element-overrides.scss';
+@use './animations.scss';
+
+// 全局通用类
+.hw-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+
+  @include responsive(md) {
+    padding: 0 $spacing-sm;
+  }
+}
+
+.hw-page {
+  padding: $spacing-lg;
+  min-height: calc(100vh - $header-height - $footer-height);
+}
+
+.hw-page-title {
+  font-size: $font-size-2xl;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: $spacing-md;
+  @include text-gradient;
+}
+
+.hw-section {
+  background: $bg-elevated;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+}
+
+.hw-text-muted {
+  color: $text-secondary;
+}
+
+.hw-text-mono {
+  font-family: $font-family-mono;
+}
+
+// 滚动条
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(13, 78, 74, 0.2);
+  border-radius: 4px;
+  &:hover {
+    background: rgba(13, 78, 74, 0.35);
+  }
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+// NProgress 颜色
+#nprogress .bar {
+  background: $color-primary !important;
+  height: 3px !important;
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px $color-primary, 0 0 5px $color-primary !important;
+}
+
+// 路由过渡
+.route-fade-enter-active,
+.route-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.route-fade-enter-from,
+.route-fade-leave-to {
+  opacity: 0;
+}
+
+// 全局加载遮罩
+.hw-loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 253, 250, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 2000;
+}
