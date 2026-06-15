@@ -56,7 +56,17 @@ export default defineConfig(({ mode }) => {
       preprocessorOptions: {
         scss: {
           api: 'modern-compiler',
-          additionalData: `@use "@/styles/variables.scss" as *;`,
+          loadPaths: [path.resolve(__dirname, 'src/styles')],
+          // The `@` alias is a Vite resolver, not a Sass resolver, so we
+          // use `loadPaths` + bare module names to inject the shared
+          // variables/mixins into every SCSS file. Files inside src/styles/
+          // manage their own @use imports to avoid double-loading.
+          additionalData: (source: string, filename: string) => {
+            if (filename.replace(/\\/g, '/').includes('/src/styles/')) {
+              return source
+            }
+            return `@use "variables" as *;\n@use "mixins" as *;\n${source}`
+          },
         },
       },
     },
