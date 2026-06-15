@@ -1,0 +1,21 @@
+# 生产环境 profile
+# 注意：所有敏感参数都必须通过环境变量注入；这里仅设置可在生产中复用的非敏感默认值
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.example.handwriting: INFO
+  file:
+    name: /var/log/handwriting-client/handwriting-client.log
+
+management:
+  endpoint:
+    health:
+      show-details: never
