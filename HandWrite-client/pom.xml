@@ -31,7 +31,21 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <lombok.version>1.18.32</lombok.version>
         <flyway.version>9.22.3</flyway.version>
+        <azure-bom.version>1.2.27</azure-bom.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Azure SDK BOM: 统一管理 azure-storage-blob / azure-storage-common / azure-identity 的版本 -->
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-sdk-bom</artifactId>
+                <version>${azure-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Web -->
@@ -98,6 +112,20 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>${minio.version}</version>
+        </dependency>
+
+        <!-- Object Storage: Azure Blob Storage (版本由 azure-sdk-bom 管理) -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-blob</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-identity</artifactId>
         </dependency>
 
         <!-- OpenAPI / Swagger -->

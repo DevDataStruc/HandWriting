@@ -50,6 +50,7 @@ public enum ErrorCode {
     INTERNAL_ERROR(5000, "服务异常，请稍后再试"),
     DB_ERROR(5100, "数据库异常"),
     REMOTE_ERROR(5200, "下游服务异常"),
+    CONFIG_ERROR(5300, "服务端配置错误"),
     UNKNOWN_ERROR(5999, "未知错误");
 
     private final int code;

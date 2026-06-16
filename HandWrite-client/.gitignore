@@ -1,4 +1,56 @@
-/target
+# ============================================================
+#  HandWrite-client 子模块 .gitignore
+#  与根 .gitignore 互补，本文件规则优先级高于父级
+# ============================================================
+
+# Maven 构建
+/target/
+**/target/
+*.class
+*.jar
+*.war
+
+# IDE
 /.idea/
 /.vscode/
+**/.idea/
+**/.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# 日志
 /logs/
+**/logs/
+*.log
+/errlog/
+**/errlog/
+
+# 环境变量：.env 含密码不入库；.env.example 是模板须入库
+/.env
+/.env.*
+!.env.example
+!.env.production
+!.env.development
+
+# Docker / 部署产物
+/docker-compose.override.yml
+/.docker-data/
+
+# IDE 模块配置（IntelliJ 在 src/ 下生成的 .idea）
+**/src/.idea/
+**/src/main.iml
+**/src/test.iml
+
+# 工具脚本（仅本机使用）
+/tools/
+
+# 临时构建产物
+*.bak
+*.tmp
+*.orig
+*.rej
+.flattened-pom.xml

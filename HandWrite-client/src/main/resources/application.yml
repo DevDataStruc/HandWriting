@@ -1,7 +1,7 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${HANDWRITE_SERVER_PORT:8080}
   tomcat:
-    max-threads: ${SERVER_TOMCAT_MAX_THREADS:200}
+    max-threads: ${HANDWRITE_SERVER_TOMCAT_MAX_THREADS:200}
     accept-count: 200
   compression:
     enabled: true
@@ -11,21 +11,21 @@ spring:
   application:
     name: handwriting-client
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${HANDWRITE_SPRING_PROFILES_ACTIVE:dev}
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: ${APP_TIMEZONE:Asia/Shanghai}
+    time-zone: ${HANDWRITE_APP_TIMEZONE:Asia/Shanghai}
     default-property-inclusion: non_null
 
   # ====== MySQL DataSource (env driven) ======
   datasource:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME:handwriting}?useSSL=${DB_USE_SSL:false}&useUnicode=true&characterEncoding=utf8&serverTimezone=${DB_TIMEZONE:Asia/Shanghai}&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://${HANDWRITE_DB_HOST}:${HANDWRITE_DB_PORT}/${HANDWRITE_DB_NAME:handwriting}?useSSL=${HANDWRITE_DB_USE_SSL:false}&useUnicode=true&characterEncoding=utf8&serverTimezone=${HANDWRITE_DB_TIMEZONE:Asia/Shanghai}&allowPublicKeyRetrieval=true
+    username: ${HANDWRITE_DB_USERNAME}
+    password: ${HANDWRITE_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX:20}
-      minimum-idle: ${DB_POOL_MIN:5}
+      maximum-pool-size: ${HANDWRITE_DB_POOL_MAX:20}
+      minimum-idle: ${HANDWRITE_DB_POOL_MIN:5}
       idle-timeout: 30000
       max-lifetime: 1800000
       connection-timeout: 30000
@@ -33,7 +33,7 @@ spring:
   # ====== JPA ======
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:validate}
+      ddl-auto: ${HANDWRITE_JPA_DDL_AUTO:validate}
     open-in-view: false
     properties:
       hibernate:
@@ -42,23 +42,23 @@ spring:
   # ====== Redis ======
   data:
     redis:
-      host: ${REDIS_HOST:127.0.0.1}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      database: ${REDIS_DATABASE:0}
+      host: ${HANDWRITE_REDIS_HOST:127.0.0.1}
+      port: ${HANDWRITE_REDIS_PORT:6379}
+      password: ${HANDWRITE_REDIS_PASSWORD:}
+      database: ${HANDWRITE_REDIS_DATABASE:0}
       timeout: 5000
       lettuce:
         pool:
-          max-active: ${REDIS_POOL_MAX_ACTIVE:16}
+          max-active: ${HANDWRITE_REDIS_POOL_MAX_ACTIVE:16}
           max-idle: 8
           min-idle: 2
 
   # ====== Mail ======
   mail:
-    host: ${MAIL_HOST:smtp.example.com}
-    port: ${MAIL_PORT:465}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    host: ${HANDWRITE_MAIL_HOST:smtp.example.com}
+    port: ${HANDWRITE_MAIL_PORT:465}
+    username: ${HANDWRITE_MAIL_USERNAME:}
+    password: ${HANDWRITE_MAIL_PASSWORD:}
     default-encoding: UTF-8
     properties:
       mail:
@@ -66,11 +66,11 @@ spring:
           auth: true
           ssl:
             enable: true
-            trust: ${MAIL_SSL_TRUST:smtp.example.com}
+            trust: ${HANDWRITE_MAIL_SSL_TRUST:smtp.example.com}
 
   # ====== Flyway ======
   flyway:
-    enabled: ${FLYWAY_ENABLED:true}
+    enabled: ${HANDWRITE_FLYWAY_ENABLED:true}
     baseline-on-migrate: true
     locations: classpath:db/migration
     table: schema_version
@@ -78,8 +78,8 @@ spring:
   # ====== Servlet Multipart (备用直传) ======
   servlet:
     multipart:
-      max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
-      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:20MB}
+      max-file-size: ${HANDWRITE_UPLOAD_MAX_FILE_SIZE:10MB}
+      max-request-size: ${HANDWRITE_UPLOAD_MAX_REQUEST_SIZE:20MB}
 
 # ====== MyBatis-Plus ======
 mybatis-plus:
@@ -107,10 +107,10 @@ springdoc:
 logging:
   level:
     root: INFO
-    com.example.handwriting: ${LOG_LEVEL_APP:DEBUG}
+    com.example.handwriting: ${HANDWRITE_LOG_LEVEL_APP:DEBUG}
     org.springframework.security: WARN
   file:
-    name: ${LOG_FILE_PATH:logs/handwriting-client.log}
+    name: ${HANDWRITE_LOG_FILE_PATH:logs/handwriting-client.log}
 
 # ====== Actuator ======
 management:
@@ -132,32 +132,40 @@ app:
   # --- JWT ---
   jwt:
     # Base64 编码后的 256 位密钥，可通过 openssl rand -base64 32 生成
-    secret: ${JWT_SECRET:Y2hhbmdlLW1lLXRoaXMtaXMtYS1kZWZhdWx0LWp3dC1zZWNyZXQ=}
-    issuer: ${JWT_ISSUER:handwriting-client}
-    access-token-ttl-seconds: ${JWT_ACCESS_TTL:900}
-    refresh-token-ttl-seconds: ${JWT_REFRESH_TTL:604800}
-    header: ${JWT_HEADER:Authorization}
-    prefix: ${JWT_PREFIX:"Bearer "}
+    secret: ${HANDWRITE_JWT_SECRET:Y2hhbmdlLW1lLXRoaXMtaXMtYS1kZWZhdWx0LWp3dC1zZWNyZXQ=}
+    issuer: ${HANDWRITE_JWT_ISSUER:handwriting-client}
+    access-token-ttl-seconds: ${HANDWRITE_JWT_ACCESS_TTL:900}
+    refresh-token-ttl-seconds: ${HANDWRITE_JWT_REFRESH_TTL:604800}
+    header: ${HANDWRITE_JWT_HEADER:Authorization}
+    prefix: ${HANDWRITE_JWT_PREFIX:"Bearer "}
   # --- CORS ---
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+    allowed-origins: ${HANDWRITE_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS
     allowed-headers: "*"
     allow-credentials: true
     max-age: 3600
-  # --- Object Storage (MinIO / S3) ---
+  # --- Object Storage (MinIO / S3 / Azure Blob) ---
   storage:
-    provider: ${STORAGE_PROVIDER:minio}
-    endpoint: ${STORAGE_ENDPOINT:http://127.0.0.1:9000}
-    access-key: ${STORAGE_ACCESS_KEY:minio}
-    secret-key: ${STORAGE_SECRET_KEY:minio123}
-    region: ${STORAGE_REGION:us-east-1}
-    bucket-collect: ${STORAGE_BUCKET_COLLECT:handwriting-collect}
-    bucket-audit: ${STORAGE_BUCKET_AUDIT:handwriting-audit}
-    bucket-backup: ${STORAGE_BUCKET_BACKUP:handwriting-backup}
-    presign-expire-seconds: ${STORAGE_PRESIGN_EXPIRE:600}
-    public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
+    provider: ${HANDWRITE_STORAGE_PROVIDER:minio}              # minio | s3 | azure
+    # 通用
+    bucket-collect: ${HANDWRITE_STORAGE_BUCKET_COLLECT:handwriting-collect}
+    bucket-audit: ${HANDWRITE_STORAGE_BUCKET_AUDIT:handwriting-audit}
+    bucket-backup: ${HANDWRITE_STORAGE_BUCKET_BACKUP:handwriting-backup}
+    presign-expire-seconds: ${HANDWRITE_STORAGE_PRESIGN_EXPIRE:600}
+    public-base-url: ${HANDWRITE_STORAGE_PUBLIC_BASE_URL:}
+    # MinIO / S3（provider=minio/s3 时使用）
+    endpoint: ${HANDWRITE_STORAGE_ENDPOINT:http://127.0.0.1:9000}
+    access-key: ${HANDWRITE_STORAGE_ACCESS_KEY:minio}
+    secret-key: ${HANDWRITE_STORAGE_SECRET_KEY:minio123}
+    region: ${HANDWRITE_STORAGE_REGION:us-east-1}
+    # Azure Blob Storage（provider=azure 时使用）
+    azure-account-name: ${HANDWRITE_AZURE_STORAGE_ACCOUNT:}
+    azure-account-key: ${HANDWRITE_AZURE_STORAGE_KEY:}
+    azure-sas-token: ${HANDWRITE_AZURE_SAS_TOKEN:}
+    azure-connection-string: ${HANDWRITE_AZURE_CONNECTION_STRING:}
+    azure-cloud: ${HANDWRITE_AZURE_CLOUD:china}                # china | global | usgov
   # --- Rate Limit ---
   ratelimit:
-    auth-per-minute: ${RATELIMIT_AUTH_PER_MIN:20}
-    upload-per-minute: ${RATELIMIT_UPLOAD_PER_MIN:60}
+    auth-per-minute: ${HANDWRITE_RATELIMIT_AUTH_PER_MIN:20}
+    upload-per-minute: ${HANDWRITE_RATELIMIT_UPLOAD_PER_MIN:60}

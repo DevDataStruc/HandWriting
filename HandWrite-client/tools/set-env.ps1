@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   从 .env 文件读取并设置 HandWrite-client 的所有环境变量。
 
@@ -30,7 +30,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Temporary', 'Permanent', 'System')]
-    [string]$Mode = 'Temporary',
+    [string]$Mode = 'Permanent',
 
     [string]$EnvFile
 )
