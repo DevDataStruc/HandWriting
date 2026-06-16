@@ -70,6 +70,9 @@ function imageToDataUrl(img: HTMLImageElement): Promise<string> {
 export function downloadSvgString(svg: string, filename: string): void {
   const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
-  triggerDownload(url, filename)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  try {
+    triggerDownload(url, filename)
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 }
