@@ -19,6 +19,7 @@ D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\a
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\auth\dto\LoginDTO.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\user\entity\User.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\sample\controller\SampleController.java
+D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\config\ConfigAuditRunner.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\config\MybatisPlusConfig.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\HandwritingClientApplication.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\sample\entity\Sample.java
@@ -30,6 +31,7 @@ D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\f
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\stats\service\StatsService.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\admin\entity\UserRole.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\config\AzureBlobConfig.java
+D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\config\HandwriteEnvPostProcessor.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\user\dto\UserVO.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\dict\repository\CharDictRepository.java
 D:\dev\JavaCourseDesign\HandWrite-client\src\main\java\com\example\handwriting\config\RedisConfig.java

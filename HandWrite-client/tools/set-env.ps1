@@ -30,7 +30,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Temporary', 'Permanent', 'System')]
-    [string]$Mode = 'Permanent',
+    [string]$Mode = 'Temporary',
 
     [string]$EnvFile
 )
