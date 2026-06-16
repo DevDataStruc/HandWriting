@@ -1,0 +1,85 @@
+/* ===========================================================
+ *  国风诗词水墨 — 工具面板设计令牌
+ *  浅米宣纸底 + 低饱和水墨 + 朱砂印章点缀
+ *  全局控件统一：圆角 6px / 墨线 1px / 强调线 2px
+ * ========================================================== */
+
+/* —— 宣纸色阶 —— */
+$rice-paper: #f5f0e6; // 主宣纸
+$rice-paper-light: #f9f5ec; // 浅宣
+$rice-paper-deep: #ebe2d0; // 深宣
+$ink-faint: #e0d8c8; // 极淡墨纹
+$ink-grid: #c8c0b0; // 细墨枝分隔线
+$ink-soft: #a09788; // 远山灰
+$ink-mid: #6e665c; // 淡墨
+$ink-deep: #5a554e; // 浓墨（批注灰）
+$ink-black: #2d2a26; // 松烟墨黑（主文字）
+
+/* —— 矿物颜料（与 inkPalette.ts 对应）—— */
+$cinnabar: #a83c32; // 朱砂
+$cinnabar-soft: #c76a5c; // 淡朱
+$cinnabar-bg: rgba(168, 60, 50, 0.08);
+$rouge: #8e2a3b;
+$rattan: #d4b16a; // 藤黄
+$orchid: #4a6f70; // 花青
+$bamboo-green: #6b8e7f; // 竹青
+$ochre: #a65e44; // 赭石
+$wood: #d4c5a8; // 木尺
+$wood-deep: #a67c52; // 木珠
+$jade: #d4e4e1; // 玉扣底色
+$jade-deep: #4a6f70; // 玉扣主色
+
+/* —— 字体栈 —— */
+$font-kai: 'STKaiti', 'KaiTi', '华康俪金黑', 'Kaiti SC', '楷体', serif;
+$font-song: 'FangSong', 'STFangsong', '方正清刻本悦宋', 'Songti SC', '宋体', 'STSong', serif;
+$font-fang: 'FangSong', 'STFangsong', '方正苏新诗柳楷', '仿宋', 'FangSong_GB2312', serif;
+$font-zhuan: 'STKaiti', 'KaiTi', '楷体', 'STZhongsong', serif; // 篆体无系统字体时回落
+$font-body: $font-song;
+
+/* —— 控件尺寸 —— */
+$radius: 6px;
+$radius-sm: 4px;
+$radius-lg: 10px;
+$border-thin: 1px; // 功能边框
+$border-strong: 2px; // 强调边框
+$spacing-block: 24px; // 上下区块间距
+$spacing-inline: 16px; // 区块内最小留白
+
+/* —— 交互态 —— */
+$hover-halo: rgba(45, 42, 38, 0.1); // 淡墨晕染
+$selected-halo: rgba(74, 111, 112, 0.2); // 花青水墨晕边
+$disabled-opacity: 0.35;
+
+/* —— 导出混入 —— */
+@mixin paper-bg {
+  background-color: $rice-paper;
+  // 暗纹肌理在 Vue 组件中通过 RICE_PAPER_TEXTURE_SVG 应用，
+  // 避免在 SCSS 字符串里写大段 SVG（引号会破坏编译）
+}
+
+@mixin ink-frame($color: $ink-deep) {
+  border: $border-thin solid $color;
+  border-radius: $radius;
+  background-color: $rice-paper-light;
+}
+
+@mixin ink-frame-strong($color: $ochre) {
+  border: $border-strong solid $color;
+  border-radius: $radius;
+  background-color: $rice-paper;
+}
+
+@mixin selected-glow {
+  border-color: $orchid;
+  box-shadow:
+    0 0 0 2px $selected-halo,
+    inset 0 0 0 1px rgba(74, 111, 112, 0.4);
+}
+
+@mixin label-caption {
+  font-family: $font-fang;
+  font-size: 10pt;
+  color: $ink-deep;
+  letter-spacing: 0.05em;
+  user-select: none;
+}

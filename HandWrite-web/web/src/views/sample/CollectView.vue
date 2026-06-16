@@ -28,24 +28,11 @@
           ref="padRef"
           :width="600"
           :height="400"
+          :initial-artwork-title="artworkTitle"
           @change="onStrokeChange"
+          @save="onPadSave"
+          @update:artwork-title="onTitleChange"
         />
-        <div class="pad-footer">
-          <div class="pad-footer__info">
-            <span>笔画数：{{ strokeCount }}</span>
-            <span>用时：{{ formatDuration(durationMs) }}</span>
-          </div>
-          <div class="pad-footer__actions">
-            <BaseButton type="ghost" @click="onClear">
-              <el-icon><Delete /></el-icon>
-              <span>清空</span>
-            </BaseButton>
-            <BaseButton type="cta" :loading="uploading" :disabled="strokeCount === 0" @click="onSubmit">
-              <el-icon><Upload /></el-icon>
-              <span>提交样本</span>
-            </BaseButton>
-          </div>
-        </div>
       </BaseCard>
     </div>
   </div>
@@ -53,20 +40,21 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import BaseCard from '@/components/base/BaseCard.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
 import HandwritingPad from '@/components/business/HandwritingPad.vue'
 import CharPrompt from '@/components/business/CharPrompt.vue'
 import { useDictStore } from '@/stores/dict'
 import { useSampleStore } from '@/stores/sample'
-import { formatDuration } from '@/utils/format'
 
 const dictStore = useDictStore()
 const sampleStore = useSampleStore()
+const route = useRoute()
 
 const padRef = ref<InstanceType<typeof HandwritingPad> | null>(null)
 const currentChar = ref(dictStore.currentChar)
+const artworkTitle = ref('')
 const strokeCount = ref(0)
 const uploading = ref(false)
 const startTime = ref<number>(0)
@@ -109,38 +97,52 @@ function onClear() {
   }
 }
 
-async function onSubmit() {
+function onTitleChange(t: string) {
+  artworkTitle.value = t
+}
+
+/** 板内"存稿"按钮触发：与提交样本走同一上传流程 */
+async function onPadSave(payload: {
+  blob: Blob
+  svg: string
+  dataUrl: string
+  strokeCount: number
+  durationMs: number
+  title: string
+}) {
   if (!currentChar.value) {
     ElMessage.warning('请先选择字符')
     return
   }
-  if (strokeCount.value === 0) {
-    ElMessage.warning('请先书写')
-    return
-  }
-  const blob = await padRef.value?.toBlob()
-  if (!blob) {
-    ElMessage.error('样本生成失败')
-    return
-  }
+  if (payload.strokeCount === 0) return
   uploading.value = true
   try {
-    await sampleStore.upload(currentChar.value.id, blob, {
-      duration: durationMs.value,
-      strokeCount: strokeCount.value,
+    await sampleStore.upload(currentChar.value.id, payload.blob, {
+      duration: payload.durationMs,
+      strokeCount: payload.strokeCount,
+      remark: payload.title,
     })
-    ElMessage.success('上传成功')
+    ElMessage.success('已存入「我的样本」')
     onClear()
     refreshChar()
   } catch (err) {
-    console.warn('upload error', err)
-    ElMessage.error('上传失败')
+    console.warn('save error', err)
+    ElMessage.error('保存失败')
   } finally {
     uploading.value = false
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 支持 ?charId=xxx 直接定位到某字符（来自"我的样本"重新采集）
+  const charId = route.query.charId
+  if (charId) {
+    try {
+      currentChar.value = await dictStore.fetchById(String(charId))
+    } catch {
+      /* ignore */
+    }
+  }
   if (!currentChar.value) {
     refreshChar()
   }

@@ -29,6 +29,12 @@ export const useDictStore = defineStore('dict', () => {
     return data
   }
 
+  async function fetchById(id: number | string): Promise<DictChar> {
+    const data = await dictApi.fetchChar(id)
+    currentChar.value = data
+    return data
+  }
+
   async function fetchCategories(): Promise<string[]> {
     if (categories.value.length > 0) return categories.value
     const data = await dictApi.fetchCategories()
@@ -48,6 +54,7 @@ export const useDictStore = defineStore('dict', () => {
     loading,
     fetchChars,
     fetchRandom,
+    fetchById,
     fetchCategories,
     setCurrent,
   }

@@ -7,6 +7,12 @@
  *  - 毛笔类：中等 thinning，尾端渐变
  *  - 柳叶笔类：高 thinning + 双向 taper，模拟柳叶尖头-中宽-收尾的笔锋
  */
+
+/** 数值限位 */
+export function clamp(v: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, v))
+}
+
 export type BrushCategory = 'pen' | 'brush' | 'willow'
 
 export interface BrushPreset {
@@ -131,7 +137,7 @@ export const BRUSH_PRESETS: BrushPreset[] = [
   },
   {
     id: 'willow-flowing',
-    name: '飘逸柳',
+    name: '飘途柳',
     nameEn: 'Willow (Flowing)',
     category: 'willow',
     size: 16,
@@ -159,7 +165,36 @@ export const DEFAULT_BRUSH_ID = 'willow-thin'
 export const ANGLE_MIN = 0
 export const ANGLE_MAX = 180
 
-/** 大小限位 */
+/** 大小限位（1-100px，覆盖绝大多数书写场景） */
 export const SIZE_MIN = 1
-export const SIZE_MAX = 32
+export const SIZE_MAX = 100
 export const DEFAULT_SIZE = 8
+
+/** 压感灵敏度：50=标准，<50=更迟钝，>50=更灵敏 */
+export const PRESSURE_SENSITIVITY_MIN = 0
+export const PRESSURE_SENSITIVITY_MAX = 200
+export const DEFAULT_PRESSURE_SENSITIVITY = 100
+
+/** 压感曲线：把原始 0-1 压力重映射成最终用于渲染的 0-1 值 */
+export type PressureCurve = 'linear' | 'soft' | 'hard'
+
+/** 压感曲线函数（曲线越陡，轻压力也能产生明显粗细） */
+export const PRESSURE_CURVES: Record<PressureCurve, (p: number) => number> = {
+  // 线性：1:1
+  linear: (p) => p,
+  // 柔和：低压力变化更平滑（立方曲线，让轻微压力即可展现笔锋）
+  soft: (p) => Math.pow(p, 0.5),
+  // 刚烈：低压力时几乎不显，高压力时爆发（更接近真实毛笔）
+  hard: (p) => Math.pow(p, 2),
+}
+
+/** 压感曲线对输入压力应用灵敏度（0~2 倍乘） */
+export function applyPressure(
+  pressure: number,
+  sensitivityPct: number,
+  curve: PressureCurve
+): number {
+  const sens = clamp(sensitivityPct / 100, 0, 2)
+  const remapped = PRESSURE_CURVES[curve](pressure) * sens
+  return clamp(remapped, 0, 1)
+}

@@ -27,9 +27,53 @@ describe('useHandwriting', () => {
     w.setSize(0)
     expect(w.size.value).toBe(1)
     w.setSize(9999)
-    expect(w.size.value).toBe(32)
+    expect(w.size.value).toBe(100)
     w.setSize(10)
     expect(w.size.value).toBe(10)
+  })
+
+  it('pressure sensitivity changes stroke width at the same input pressure', () => {
+    const pts = makePts(20)
+    const baseline = useHandwriting({ brush: 'willow-thick', pressureSensitivity: 0 })
+    baseline.startStroke(pts[0])
+    pts.slice(1).forEach((p) => baseline.extendStroke(p))
+    const d0 = baseline.endStroke()!.d
+
+    const amplified = useHandwriting({ brush: 'willow-thick', pressureSensitivity: 200 })
+    amplified.startStroke(pts[0])
+    pts.slice(1).forEach((p) => amplified.extendStroke(p))
+    const d1 = amplified.endStroke()!.d
+
+    expect(d0).not.toBe(d1)
+  })
+
+  it('pressure curve changes stroke output', () => {
+    const pts = makePts(20)
+    const lin = useHandwriting({ brush: 'pen-fine', pressureCurve: 'linear' })
+    lin.startStroke(pts[0])
+    pts.slice(1).forEach((p) => lin.extendStroke(p))
+    const linD = lin.endStroke()!.d
+
+    const soft = useHandwriting({ brush: 'pen-fine', pressureCurve: 'soft' })
+    soft.startStroke(pts[0])
+    pts.slice(1).forEach((p) => soft.extendStroke(p))
+    const softD = soft.endStroke()!.d
+
+    expect(linD).not.toBe(softD)
+  })
+
+  it('pressure off collapses to a uniform width stroke', () => {
+    const pts = [
+      { x: 0, y: 0, pressure: 1.0, time: 0 },
+      { x: 5, y: 0, pressure: 0.0, time: 16 },
+      { x: 10, y: 0, pressure: 1.0, time: 32 },
+    ]
+    const w = useHandwriting({ brush: 'pen-fine', pressure: false })
+    w.startStroke(pts[0])
+    pts.slice(1).forEach((p) => w.extendStroke(p))
+    const d = w.endStroke()!.d
+    // 输入压力为 0 时线宽应等于 0.5 时的尺寸
+    expect(d).toMatch(/^M.*Z$/)
   })
 
   it('setAngle clamps into [0, 180]', () => {

@@ -1,11 +1,14 @@
 import { computed, ref } from 'vue'
 import { getStroke } from 'perfect-freehand'
 import {
+  applyPressure,
   BRUSH_PRESETS_BY_ID,
+  clamp,
   DEFAULT_BRUSH_ID,
   SIZE_MAX,
   SIZE_MIN,
   type BrushPreset,
+  type PressureCurve,
 } from '@/utils/brushPresets'
 import { STROKE_DEFAULT_SIZE } from '@/utils/constants'
 
@@ -33,6 +36,10 @@ export interface UseHandwritingOptions {
   angle?: number
   /** 是否响应压感 */
   pressure?: boolean
+  /** 压感灵敏度（0~200，100=标准） */
+  pressureSensitivity?: number
+  /** 压感曲线：linear / soft / hard */
+  pressureCurve?: PressureCurve
   minSize?: number
   maxSize?: number
 }
@@ -44,11 +51,6 @@ export interface RenderedStroke {
   color: string
 }
 
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v))
-}
-
-/** 把 perfect-freehand 轮廓点转换为带 Z 闭合的 SVG path */
 function outlineToSvgPath(outline: number[][]): string {
   if (outline.length < 2) return ''
   const parts: string[] = []
@@ -67,7 +69,6 @@ function outlineToSvgPath(outline: number[][]): string {
   return parts.join(' ') + ' Z'
 }
 
-/** 围绕质心旋转点集（角度制） */
 function rotateAroundCentroid(outline: number[][], angleDeg: number): number[][] {
   if (!outline.length || Math.abs(angleDeg) < 0.01) return outline
   let cx = 0
@@ -91,15 +92,10 @@ function rotateAroundCentroid(outline: number[][], angleDeg: number): number[][]
 /**
  * 手写板 composable，基于 perfect-freehand 实现笔锋还原。
  *
- * 用法：
- *   const w = useHandwriting({ brush: 'willow-thin' })
- *   w.startStroke({ x, y, pressure: 0.5, time: Date.now() })
- *   w.extendStroke(...)
- *   w.endStroke()        // 提交后写入 strokes，输出 SVG 路径
- *   w.toSVG(width, height)
+ * 压感管线：原始 pressure → applyPressure(sens, curve) → 渲染输入。
+ * 这样不同灵敏度/曲线能在同一组采样点上产生不同视觉效果。
  */
 export function useHandwriting(options: UseHandwritingOptions = {}) {
-  /** 已渲染的笔画快照（保证撤销/重做不丢设置） */
   const strokes = ref<RenderedStroke[]>([])
   const redoStack = ref<RenderedStroke[]>([])
   const currentStroke = ref<StrokePoint[]>([])
@@ -109,6 +105,8 @@ export function useHandwriting(options: UseHandwritingOptions = {}) {
   const brushId = ref<string>(options.brush ?? DEFAULT_BRUSH_ID)
   const angle = ref<number>(options.angle ?? 0)
   const pressureEnabled = ref<boolean>(options.pressure ?? true)
+  const pressureSensitivity = ref<number>(options.pressureSensitivity ?? 100)
+  const pressureCurve = ref<PressureCurve>(options.pressureCurve ?? 'linear')
   const minSize = options.minSize ?? SIZE_MIN
   const maxSize = options.maxSize ?? SIZE_MAX
 
@@ -136,14 +134,28 @@ export function useHandwriting(options: UseHandwritingOptions = {}) {
     pressureEnabled.value = !!p
   }
 
-  /** 触发 perfect-freehand 渲染一条新笔画的 path d */
+  function setPressureSensitivity(p: number): void {
+    pressureSensitivity.value = clamp(p, 0, 200)
+  }
+
+  function setPressureCurve(c: PressureCurve): void {
+    pressureCurve.value = c
+  }
+
+  /** 把原始点转成 [x, y, pressure]（pressure 走压感管线） */
+  function toFreehandInput(points: StrokePoint[]): number[][] {
+    return points.map((p) => {
+      const raw = p.pressure ?? 0.5
+      const out = pressureEnabled.value
+        ? applyPressure(raw, pressureSensitivity.value, pressureCurve.value)
+        : 0.5
+      return [p.x, p.y, out]
+    })
+  }
+
   function buildStrokePath(points: StrokePoint[]): string {
     if (points.length < 2) return ''
-    const input = points.map((p) => [
-      p.x,
-      p.y,
-      pressureEnabled.value && p.pressure ? p.pressure : 0.5,
-    ])
+    const input = toFreehandInput(points)
     const outline = getStroke(input as unknown as number[][], {
       size: size.value,
       thinning: currentBrush.value.thinning,
@@ -179,7 +191,6 @@ export function useHandwriting(options: UseHandwritingOptions = {}) {
     return snap
   }
 
-  /** 实时预览 path（不写入 strokes） */
   function previewPath(points?: StrokePoint[]): string {
     const pts = points ?? currentStroke.value
     return buildStrokePath(pts)
@@ -209,7 +220,6 @@ export function useHandwriting(options: UseHandwritingOptions = {}) {
     return redoStack.value.length > 0
   }
 
-  /** 导出 SVG 字符串 */
   function toSVG(width: number, height: number): string {
     const paths = strokes.value
       .map((s) => `<path d="${s.d}" fill="${s.color}" fill-rule="nonzero" />`)
@@ -227,6 +237,8 @@ export function useHandwriting(options: UseHandwritingOptions = {}) {
     brushId,
     angle,
     pressureEnabled,
+    pressureSensitivity,
+    pressureCurve,
     currentBrush,
     // 操作
     startStroke,
@@ -243,6 +255,8 @@ export function useHandwriting(options: UseHandwritingOptions = {}) {
     setColor,
     setAngle,
     setPressure,
+    setPressureSensitivity,
+    setPressureCurve,
     // 导出
     toSVG,
   }

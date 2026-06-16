@@ -27,7 +27,10 @@ export function setupGuards(router: Router): void {
 
     const requiredRoles = to.meta.roles
     if (requiredRoles && requiredRoles.length > 0) {
-      if (!requiredRoles.some((r) => userStore.roles.includes(r))) {
+      // 兜底：已登录但后端未下发 roles（JWT 没塞 / profile 接口没返回）时，
+      // 视作普通用户放行，避免新用户一进就 403。
+      const effectiveRoles = userStore.roles.length > 0 ? userStore.roles : ['USER' as const]
+      if (!requiredRoles.some((r) => effectiveRoles.includes(r as never))) {
         next({ name: 'Forbidden' })
         return
       }

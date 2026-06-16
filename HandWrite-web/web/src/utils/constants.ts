@@ -38,7 +38,7 @@ export const HTTP_STATUS = {
 
 export const STROKE_DEFAULT_SIZE = 8
 export const STROKE_MIN_SIZE = 1
-export const STROKE_MAX_SIZE = 32
+export const STROKE_MAX_SIZE = 100
 
 export const CANVAS_DEFAULT_WIDTH = 600
 export const CANVAS_DEFAULT_HEIGHT = 400

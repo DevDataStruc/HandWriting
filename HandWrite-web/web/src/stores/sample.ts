@@ -70,6 +70,17 @@ export const useSampleStore = defineStore('sample', () => {
     if (currentDetail.value?.id === id) currentDetail.value = null
   }
 
+  async function removeMany(ids: (number | string)[]): Promise<void> {
+    if (ids.length === 0) return
+    await sampleApi.batchDeleteSamples(ids)
+    const set = new Set(ids.map(String))
+    list.value = list.value.filter((s) => !set.has(String(s.id)))
+    total.value = Math.max(0, total.value - ids.length)
+    if (currentDetail.value && set.has(String(currentDetail.value.id))) {
+      currentDetail.value = null
+    }
+  }
+
   function reset(): void {
     list.value = []
     total.value = 0
@@ -91,6 +102,7 @@ export const useSampleStore = defineStore('sample', () => {
     upload,
     fetchDetail,
     remove,
+    removeMany,
     reset,
   }
 })
