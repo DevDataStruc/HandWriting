@@ -19,9 +19,9 @@ spring:
 
   # ====== MySQL DataSource (env driven) ======
   datasource:
-    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:handwriting}?useSSL=${DB_USE_SSL:false}&useUnicode=true&characterEncoding=utf8&serverTimezone=${DB_TIMEZONE:Asia/Shanghai}&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:123456}
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME:handwriting}?useSSL=${DB_USE_SSL:false}&useUnicode=true&characterEncoding=utf8&serverTimezone=${DB_TIMEZONE:Asia/Shanghai}&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: ${DB_POOL_MAX:20}
