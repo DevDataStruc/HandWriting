@@ -55,12 +55,7 @@
       <div class="hw-container">
         <h2 class="section-title">核心特性</h2>
         <div class="features__grid">
-          <BaseCard
-            v-for="(f, i) in features"
-            :key="i"
-            hoverable
-            class="feature-card"
-          >
+          <BaseCard v-for="(f, i) in features" :key="i" hoverable class="feature-card">
             <div class="feature-icon" :style="{ background: f.bg }">
               <el-icon :size="24" :color="f.color"><component :is="f.icon" /></el-icon>
             </div>
@@ -316,7 +311,8 @@ const features = [
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {

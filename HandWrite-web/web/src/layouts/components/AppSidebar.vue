@@ -1,5 +1,9 @@
 <template>
-  <el-aside :width="width" class="app-sidebar" :class="{ 'is-collapsed': appStore.sidebarCollapsed }">
+  <el-aside
+    :width="width"
+    class="app-sidebar"
+    :class="{ 'is-collapsed': appStore.sidebarCollapsed }"
+  >
     <div class="app-sidebar__inner">
       <div class="sidebar-brand">
         <img src="@/assets/logo.svg" alt="logo" class="logo" />
@@ -17,18 +21,16 @@
         active-text-color="#22C55E"
         router
       >
-        <el-menu-item
-          v-for="item in menuItems"
-          :key="item.path"
-          :index="item.path"
-        >
+        <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
           <el-icon><component :is="item.icon" /></el-icon>
           <template #title>{{ item.title }}</template>
         </el-menu-item>
       </el-menu>
       <div class="sidebar-footer">
         <el-button link class="collapse-btn" @click="appStore.toggleSidebar">
-          <el-icon :size="18"><component :is="appStore.sidebarCollapsed ? 'Expand' : 'Fold'" /></el-icon>
+          <el-icon :size="18"
+            ><component :is="appStore.sidebarCollapsed ? 'Expand' : 'Fold'"
+          /></el-icon>
           <span v-if="!appStore.sidebarCollapsed">收起</span>
         </el-button>
       </div>
@@ -50,8 +52,18 @@ const userStore = useUserStore()
 const width = computed(() => (appStore.sidebarCollapsed ? '64px' : '220px'))
 
 const allMenus = [
-  { path: '/admin/dashboard', title: '数据看板', icon: 'Odometer', roles: [Role.AUDITOR, Role.ADMIN] },
-  { path: '/admin/audit', title: '样本审核', icon: 'CircleCheck', roles: [Role.AUDITOR, Role.ADMIN] },
+  {
+    path: '/admin/dashboard',
+    title: '数据看板',
+    icon: 'Odometer',
+    roles: [Role.AUDITOR, Role.ADMIN],
+  },
+  {
+    path: '/admin/audit',
+    title: '样本审核',
+    icon: 'CircleCheck',
+    roles: [Role.AUDITOR, Role.ADMIN],
+  },
   { path: '/admin/users', title: '用户管理', icon: 'User', roles: [Role.ADMIN] },
   { path: '/admin/stats', title: '统计分析', icon: 'TrendCharts', roles: [Role.ADMIN] },
   { path: '/admin/logs', title: '审计日志', icon: 'Document', roles: [Role.ADMIN] },
@@ -66,7 +78,7 @@ const activeMenu = computed(() => route.path)
 
 <style lang="scss" scoped>
 .app-sidebar {
-  background: linear-gradient(180deg, $color-primary-darker 0%, #0F172A 100%);
+  background: linear-gradient(180deg, $color-primary-darker 0%, #0f172a 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: width $transition-base;
   height: 100vh;

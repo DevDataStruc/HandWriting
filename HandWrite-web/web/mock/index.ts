@@ -118,11 +118,23 @@ const mocks: MockMethod[] = [
       code: 0,
       msg: 'ok',
       data: [
-        { userId: 1, username: 'calligrapher', nickname: '书法家A', sampleCount: 532, approvedCount: 510 },
+        {
+          userId: 1,
+          username: 'calligrapher',
+          nickname: '书法家A',
+          sampleCount: 532,
+          approvedCount: 510,
+        },
         { userId: 2, username: 'writer', nickname: '小编', sampleCount: 412, approvedCount: 400 },
         { userId: 3, username: 'demo', nickname: 'Demo', sampleCount: 320, approvedCount: 305 },
         { userId: 4, username: 'pen', nickname: '钢笔侠', sampleCount: 280, approvedCount: 250 },
-        { userId: 5, username: 'student', nickname: '小学生', sampleCount: 210, approvedCount: 200 },
+        {
+          userId: 5,
+          username: 'student',
+          nickname: '小学生',
+          sampleCount: 210,
+          approvedCount: 200,
+        },
       ],
     }),
   },
@@ -164,6 +176,31 @@ const mocks: MockMethod[] = [
         pageSize: 10,
       },
     }),
+  },
+  {
+    url: '/v1/sample/upload',
+    method: 'post',
+    timeout: 400,
+    response: () => ({
+      code: 0,
+      msg: 'ok',
+      data: {
+        id: Math.floor(Math.random() * 100000) + 1000,
+        url: '',
+        charId: 1,
+        createdAt: new Date().toISOString(),
+      },
+    }),
+  },
+  {
+    url: '/v1/sample/:id',
+    method: 'delete',
+    response: () => ({ code: 0, msg: 'ok', data: null }),
+  },
+  {
+    url: '/v1/sample/batch-delete',
+    method: 'post',
+    response: () => ({ code: 0, msg: 'ok', data: null }),
   },
 ]
 

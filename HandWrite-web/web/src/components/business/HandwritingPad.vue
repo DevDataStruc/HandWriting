@@ -6,7 +6,7 @@
         <svg
           ref="svgRef"
           class="hw-pad__svg"
-          :viewBox="`0 0 ink.${width} ink.${height}`"
+          :viewBox="`0 0 ${width} ${height}`"
           :width="width"
           :height="height"
           xmlns="http://www.w3.org/2000/svg"
@@ -15,6 +15,14 @@
           @pointerup="onPointerUp"
           @pointercancel="onPointerUp"
           @pointerleave="onPointerUp"
+          @mousedown="onPointerDown"
+          @mousemove="onPointerMove"
+          @mouseup="onPointerUp"
+          @mouseleave="onPointerUp"
+          @touchstart.passive="onPointerDown"
+          @touchmove.passive="onPointerMove"
+          @touchend="onPointerUp"
+          @touchcancel="onPointerUp"
         >
           <!-- 画稿笺纸背景（带格线） -->
           <g class="hw-pad__paper" aria-hidden="true">
@@ -126,19 +134,6 @@
         />
       </div>
       <div class="hw-pad__divider" />
-      <div class="hw-pad__param hw-pad__param--soft">
-        <span class="hw-pad__label">{{ t('collect.soft') }}</span>
-        <el-select
-          v-model="pressureCurve"
-          size="small"
-          class="hw-select"
-          :disabled="!pressureEnabled"
-        >
-          <el-option label="线性" value="linear" />
-          <el-option label="柔和" value="soft" />
-          <el-option label="刚烈" value="hard" />
-        </el-select>
-      </div>
     </div>
 
     <!-- ============== 压感设置 ============== -->
@@ -388,14 +383,8 @@ const dynamicEnabled = computed(() => dynamicMode.value !== 'solid')
 
 const wrapStyle = computed(() => ({
   width: '100%',
-  maxWidth: `ink.${props.width}px`,
-  aspectRatio: `ink.${props.width} / ink.${props.height}`,
-}))
-
-const paperStyle = computed(() => ({
-  backgroundImage: `url("ink.${RICE_PAPER_TEXTURE_SVG}")`,
-  backgroundSize: '240px 240px',
-  backgroundRepeat: 'repeat',
+  maxWidth: `${props.width}px`,
+  aspectRatio: `${props.width} / ${props.height}`,
 }))
 
 const activeColorMeta = computed(() => closestInk(strokeColor.value))
@@ -405,7 +394,7 @@ const durationLabel = computed(() => {
   const ms = sessionStart.value > 0 ? performance.now() - sessionStart.value : 0
   const s = Math.floor(ms / 1000)
   const m = Math.floor(s / 60)
-  return `ink.${String(m).padStart(2, '0')}:ink.${String(s % 60).padStart(2, '0')}`
+  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 })
 
 const hintText = computed(() => {
@@ -427,7 +416,7 @@ function resolveColorAt(t: number): string {
 }
 
 function hexToRgb(hex: string): [number, number, number] {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})ink.$/i.exec(hex.trim())
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim())
   if (!m) return [0, 0, 0]
   let h = m[1]
   if (h.length === 3)
@@ -440,7 +429,7 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 function rgbToHex(r: number, g: number, b: number): string {
   const c = (v: number) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0')
-  return `#ink.${c(r)}ink.${c(g)}ink.${c(b)}`
+  return `#${c(r)}${c(g)}${c(b)}`
 }
 
 const currentColor = computed(() =>
@@ -487,7 +476,7 @@ function outlineToSvgPath(outline: number[][]): string {
     const fx = x.toFixed(2)
     const fy = y.toFixed(2)
     if (fx === prevX.toFixed(2) && fy === prevY.toFixed(2)) continue
-    parts.push(`ink.${i === 0 ? 'M' : 'L'}ink.${fx},ink.${fy}`)
+    parts.push(`${i === 0 ? 'M' : 'L'}${fx},${fy}`)
     prevX = x
     prevY = y
   }
@@ -511,40 +500,91 @@ const currentPath = computed(() => {
 })
 
 // -------------------- 事件 --------------------
-function getSvgPoint(e: PointerEvent): RawPoint | null {
+type InputEvent = PointerEvent | MouseEvent | TouchEvent
+
+function extractCoords(
+  e: InputEvent
+): { x: number; y: number; pressure: number; pointerId: number; t: number } | null {
+  if (e instanceof TouchEvent) {
+    const t = e.touches[0] || e.changedTouches[0]
+    if (!t) return null
+    return {
+      x: t.clientX,
+      y: t.clientY,
+      pressure: t.force || 0.5,
+      pointerId: t.identifier,
+      t: Date.now(),
+    }
+  }
+  // PointerEvent / MouseEvent 都具备 clientX/Y/pressure
+  const pe = e as PointerEvent & MouseEvent
+  return {
+    x: pe.clientX,
+    y: pe.clientY,
+    pressure: typeof pe.pressure === 'number' && pe.pressure > 0 ? pe.pressure : 0.5,
+    pointerId: (pe as PointerEvent).pointerId ?? 0,
+    t: pe.timeStamp || performance.now(),
+  }
+}
+
+function getSvgPoint(coords: {
+  x: number
+  y: number
+  pressure: number
+  t: number
+}): RawPoint | null {
   const svg = svgRef.value
   if (!svg) return null
   const rect = svg.getBoundingClientRect()
   if (rect.width === 0 || rect.height === 0) return null
-  const x = ((e.clientX - rect.left) / rect.width) * props.width
-  const y = ((e.clientY - rect.top) / rect.height) * props.height
+  const x = ((coords.x - rect.left) / rect.width) * props.width
+  const y = ((coords.y - rect.top) / rect.height) * props.height
   if (x < 0 || y < 0 || x > props.width || y > props.height) return null
-  const rawPressure = e.pressure
-  const pressure = rawPressure && rawPressure > 0 ? rawPressure : 0.5
-  return { x, y, pressure, t: e.timeStamp || performance.now() }
+  return { x, y, pressure: coords.pressure, t: coords.t }
 }
 
-function onPointerDown(e: PointerEvent) {
+function isLeftInput(e: InputEvent): boolean {
+  if (e instanceof TouchEvent) return true
+  const me = e as MouseEvent
+  // mouse: 仅响应左键 (button 0)；中/右键直接 return
+  // pen/tablet: 在悬停/移动时 button 可能是 -1，仅当 button === 0 视为有效按下
+  if (me.button !== undefined && me.button > 0) return false
+  return true
+}
+
+let activePointerId: number | null = null
+
+function onPointerDown(e: InputEvent) {
   if (props.readonly) return
-  if (e.pointerType === 'mouse' && e.button !== 0) return
-  e.preventDefault()
-  const p = getSvgPoint(e)
+  if (!isLeftInput(e)) return
+  // 避免与鼠标右键菜单冲突
+  if (e.cancelable) e.preventDefault()
+  const coords = extractCoords(e)
+  if (!coords) return
+  const p = getSvgPoint(coords)
   if (!p) return
   isDrawing.value = true
+  activePointerId = coords.pointerId
   rawPoints.value = [p]
   if (sessionStart.value === 0) sessionStart.value = performance.now()
-  try {
-    ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
-  } catch {
-    /* 旧浏览器忽略 */
+  // 仅 PointerEvent 可调用 setPointerCapture；旧浏览器/鼠标事件降级到 window 监听
+  const target = e.currentTarget as Element | null
+  if (e instanceof PointerEvent) {
+    try {
+      target?.setPointerCapture?.(e.pointerId)
+    } catch {
+      /* 旧浏览器忽略 */
+    }
   }
   emit('start')
 }
 
 let rafId: number | null = null
-function onPointerMove(e: PointerEvent) {
+function onPointerMove(e: InputEvent) {
   if (!isDrawing.value) return
-  const p = getSvgPoint(e)
+  const coords = extractCoords(e)
+  if (!coords) return
+  const p = getSvgPoint(coords)
   if (!p) return
   rawPoints.value.push(p)
   lastTickAt.value = performance.now()
@@ -559,6 +599,7 @@ function onPointerMove(e: PointerEvent) {
 function onPointerUp() {
   if (!isDrawing.value) return
   isDrawing.value = false
+  activePointerId = null
   if (rafId !== null) {
     cancelAnimationFrame(rafId)
     rafId = null
@@ -579,7 +620,7 @@ function onPointerUp() {
     const d = outlineToSvgPath(rotated)
     if (d) {
       committedStrokes.value.push({
-        id: `s-ink.${Date.now()}-ink.${Math.random().toString(36).slice(2, 7)}`,
+        id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         d,
         color: finalColor,
       })
@@ -634,8 +675,8 @@ function renderToCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
   canvas.width = props.width * dpr
   canvas.height = props.height * dpr
-  canvas.style.width = `ink.${props.width}px`
-  canvas.style.height = `ink.${props.height}px`
+  canvas.style.width = `${props.width}px`
+  canvas.style.height = `${props.height}px`
   const ctx = canvas.getContext('2d')
   if (!ctx) return canvas
   ctx.scale(dpr, dpr)
@@ -657,10 +698,10 @@ function toBlob(mime = 'image/png', quality = 1): Promise<Blob | null> {
 }
 function toSVGString(): string {
   const paths = committedStrokes.value
-    .map((s) => `<path d="ink.${s.d}" fill="ink.${s.color}" fill-rule="nonzero" />`)
+    .map((s) => `<path d="${s.d}" fill="${s.color}" fill-rule="nonzero" />`)
     .join('')
-  const bg = `<rect x="0" y="0" width="ink.${props.width}" height="ink.${props.height}" fill="#F5F0E6" />`
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="ink.${props.width}" height="ink.${props.height}" viewBox="0 0 ink.${props.width} ink.${props.height}">ink.${bg}ink.${paths}</svg>`
+  const bg = `<rect x="0" y="0" width="${props.width}" height="${props.height}" fill="#F5F0E6" />`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${props.width}" height="${props.height}" viewBox="0 0 ${props.width} ${props.height}">${bg}${paths}</svg>`
 }
 
 async function onSave() {
@@ -722,6 +763,18 @@ useEventListener(window, 'keydown', (e: KeyboardEvent) => {
 
 useResizeObserver(containerRef, () => {
   /* viewBox 已自适应 */
+})
+
+// 手写板兜底：当设备/驱动不触发 PointerEvent 但能触发 MouseEvent 时，
+// 在 window 上挂一份 move/up 监听，确保拖出 SVG 范围仍能继续绘制并正常落笔。
+useEventListener(window, 'mousemove', (e) => {
+  if (!isDrawing.value) return
+  if (activePointerId !== null) return // PointerEvent 模式已接管
+  onPointerMove(e)
+})
+useEventListener(window, 'mouseup', () => {
+  if (activePointerId !== null) return
+  onPointerUp()
 })
 
 onMounted(() => {
@@ -894,7 +947,13 @@ defineExpose({
   &__divider {
     width: 1px;
     align-self: stretch;
-    background: linear-gradient(to bottom, transparent, ink.$ink-grid 30%, ink.$ink-grid 70%, transparent);
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      ink.$ink-grid 30%,
+      ink.$ink-grid 70%,
+      transparent
+    );
     &--branch {
       width: 80px;
       height: 1px;
@@ -923,7 +982,9 @@ defineExpose({
     @include ink.ink-frame(ink.$ink-deep);
     padding: 4px 10px;
     background-color: ink.$rice-paper-light;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
     &:focus-within {
       border-color: ink.$ochre;
       box-shadow: 0 0 0 2px rgba(166, 94, 68, 0.18);
@@ -1002,9 +1063,6 @@ defineExpose({
     gap: 6px;
     flex: 1;
     min-width: 180px;
-    &--soft {
-      min-width: 140px;
-    }
   }
   &__sensitivity {
     @include flex-column;

@@ -1,9 +1,5 @@
 import request from '@/utils/request'
-import type {
-  ChangePasswordRequest,
-  UpdateProfileRequest,
-  UserProfile,
-} from './contracts/user'
+import type { ChangePasswordRequest, UpdateProfileRequest, UserProfile } from './contracts/user'
 
 /** 获取个人信息 */
 export function fetchProfile(): Promise<UserProfile> {
@@ -21,6 +17,9 @@ export function changePassword(data: ChangePasswordRequest): Promise<void> {
 }
 
 /** 上传头像（直传对象存储前可调用获取签名） */
-export function uploadAvatar(formData: FormData, onProgress?: (p: number) => void): Promise<{ url: string }> {
+export function uploadAvatar(
+  formData: FormData,
+  onProgress?: (p: number) => void
+): Promise<{ url: string }> {
   return request.upload<{ url: string }>('/user/avatar', formData, onProgress)
 }

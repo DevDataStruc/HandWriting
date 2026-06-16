@@ -2,10 +2,20 @@
   <div class="sample-audit">
     <BaseCard title="样本审核工作台">
       <template #extra>
-        <el-input v-model="query.keyword" placeholder="搜索字符/用户" clearable style="width: 200px" @keyup.enter="onSearch" />
+        <el-input
+          v-model="query.keyword"
+          placeholder="搜索字符/用户"
+          clearable
+          style="width: 200px"
+          @keyup.enter="onSearch"
+        />
         <el-button type="primary" @click="onSearch">查询</el-button>
-        <el-button :disabled="selection.length === 0" @click="onBatch('APPROVED')">批量通过</el-button>
-        <el-button :disabled="selection.length === 0" type="danger" @click="onBatch('REJECTED')">批量驳回</el-button>
+        <el-button :disabled="selection.length === 0" @click="onBatch('APPROVED')"
+          >批量通过</el-button
+        >
+        <el-button :disabled="selection.length === 0" type="danger" @click="onBatch('REJECTED')"
+          >批量驳回</el-button
+        >
       </template>
       <el-table
         v-loading="auditStore.loading"
@@ -78,7 +88,7 @@ const selection = ref<Sample[]>([])
 
 const query = reactive({
   keyword: '',
-  status: 'PENDING' as 'PENDING',
+  status: 'PENDING' as const,
 })
 
 function onSelection(rows: Sample[]) {
@@ -86,7 +96,11 @@ function onSelection(rows: Sample[]) {
 }
 
 async function onSearch() {
-  await auditStore.fetchPending({ ...query, pageNum: auditStore.pageNum, pageSize: auditStore.pageSize })
+  await auditStore.fetchPending({
+    ...query,
+    pageNum: auditStore.pageNum,
+    pageSize: auditStore.pageSize,
+  })
 }
 
 async function onApprove(row: Sample) {
@@ -121,7 +135,9 @@ async function onBatch(action: 'APPROVED' | 'REJECTED') {
     )
     let reason = ''
     if (action === 'REJECTED') {
-      const { value } = await ElMessageBox.prompt('请输入批量驳回原因', '提示', { inputType: 'textarea' })
+      const { value } = await ElMessageBox.prompt('请输入批量驳回原因', '提示', {
+        inputType: 'textarea',
+      })
       reason = value || ''
     }
     const res = await auditStore.batchAudit({

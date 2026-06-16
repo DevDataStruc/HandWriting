@@ -28,7 +28,9 @@
         >
           <component :is="passwordVisible ? 'View' : 'Hide'" />
         </el-icon>
-        <el-icon v-else-if="clearable && modelValue" class="clear-icon" @click="clear"><CircleClose /></el-icon>
+        <el-icon v-else-if="clearable && modelValue" class="clear-icon" @click="clear"
+          ><CircleClose
+        /></el-icon>
         <span v-else-if="suffix">{{ suffix }}</span>
       </span>
     </div>
@@ -59,7 +61,14 @@ const props = withDefaults(
     autocomplete?: string
     showPassword?: boolean
   }>(),
-  { type: 'text', disabled: false, readonly: false, required: false, clearable: false, showPassword: false }
+  {
+    type: 'text',
+    disabled: false,
+    readonly: false,
+    required: false,
+    clearable: false,
+    showPassword: false,
+  }
 )
 
 const emit = defineEmits<{

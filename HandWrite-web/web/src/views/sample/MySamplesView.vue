@@ -63,9 +63,19 @@
           </div>
           <div class="sample-card__info">
             <div class="char">{{ item.char || item.charId }}</div>
-            <el-tag :type="statusType(item.status)" size="small" effect="light">
-              {{ statusLabel(item.status) }}
-            </el-tag>
+            <div class="tags">
+              <el-tag :type="statusType(item.status)" size="small" effect="light">
+                {{ statusLabel(item.status) }}
+              </el-tag>
+              <el-tag
+                v-if="(item as { local?: boolean }).local"
+                type="info"
+                size="small"
+                effect="plain"
+              >
+                本地草稿
+              </el-tag>
+            </div>
           </div>
           <div class="sample-card__meta">
             <span class="time">{{ formatDate(item.createdAt, 'YYYY-MM-DD HH:mm') }}</span>
@@ -224,13 +234,20 @@ async function onExport(cmd: string, item: Sample) {
     ElMessage.warning('该样本无可下载图像')
     return
   }
+  const isLocal = String(item.id).startsWith('local-')
   const base = `${item.char || 'sample'}_${item.id}`
   try {
     if (cmd === 'png') {
-      // 直接 fetch -> blob 走本地下载，避免跨域/CORS 拦截
-      const res = await fetch(item.imageUrl, { mode: 'cors' })
-      const blob = await res.blob()
-      await downloadBlob(blob, `${base}.png`)
+      if (isLocal && item.imageUrl.startsWith('data:image')) {
+        // 本地草稿走 dataURL → Blob 通道，避开 CORS
+        const res = await fetch(item.imageUrl)
+        const blob = await res.blob()
+        await downloadBlob(blob, `${base}.png`)
+      } else {
+        const res = await fetch(item.imageUrl, { mode: 'cors' })
+        const blob = await res.blob()
+        await downloadBlob(blob, `${base}.png`)
+      }
     } else if (cmd === 'svg') {
       const svg = await pngUrlToSvgString(item.imageUrl)
       downloadSvgString(svg, `${base}.svg`)
@@ -238,7 +255,6 @@ async function onExport(cmd: string, item: Sample) {
     ElMessage.success(`${t('samples.export')} ✓`)
   } catch (err) {
     console.warn('[export] fallback to direct link', err)
-    // 回退：直接触发 <a> 下载
     triggerDownload(item.imageUrl, `${base}.${cmd}`)
   }
 }

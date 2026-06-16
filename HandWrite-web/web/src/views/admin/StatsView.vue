@@ -30,7 +30,16 @@ import BaseCard from '@/components/base/BaseCard.vue'
 import { fetchSampleTrend, fetchStatusDistribution, fetchDictProgress } from '@/api/stats'
 import type { DictProgress, SampleTrend, StatusDistribution } from '@/api/contracts/stats'
 
-use([CanvasRenderer, LineChart, PieChart, BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
+use([
+  CanvasRenderer,
+  LineChart,
+  PieChart,
+  BarChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+])
 
 const lineOption = ref<Record<string, unknown>>({})
 const pieOption = ref<Record<string, unknown>>({})
@@ -69,8 +78,20 @@ function bindLine(d: SampleTrend) {
       splitLine: { lineStyle: { color: '#1E293B' } },
     },
     series: [
-      { name: '样本数', type: 'line', smooth: true, data: d.samples, itemStyle: { color: '#22C55E' } },
-      { name: '用户数', type: 'line', smooth: true, data: d.users, itemStyle: { color: '#38BDF8' } },
+      {
+        name: '样本数',
+        type: 'line',
+        smooth: true,
+        data: d.samples,
+        itemStyle: { color: '#22C55E' },
+      },
+      {
+        name: '用户数',
+        type: 'line',
+        smooth: true,
+        data: d.users,
+        itemStyle: { color: '#38BDF8' },
+      },
     ],
   }
 }

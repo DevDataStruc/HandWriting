@@ -5,7 +5,13 @@
         <h1>注册账号</h1>
         <p>加入我们，一起为 AI 训练贡献笔迹</p>
       </div>
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleSubmit">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent="handleSubmit"
+      >
         <el-form-item label="用户名" prop="username">
           <BaseInput v-model="form.username" placeholder="3-20 位字母/数字/下划线" />
         </el-form-item>
@@ -16,12 +22,28 @@
           <BaseInput v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <BaseInput v-model="form.password" type="password" placeholder="6-32 位字符" show-password />
+          <BaseInput
+            v-model="form.password"
+            type="password"
+            placeholder="6-32 位字符"
+            show-password
+          />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
-          <BaseInput v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" show-password />
+          <BaseInput
+            v-model="form.confirmPassword"
+            type="password"
+            placeholder="请再次输入密码"
+            show-password
+          />
         </el-form-item>
-        <BaseButton type="primary" :loading="loading" block native-type="submit" @click="handleSubmit">
+        <BaseButton
+          type="primary"
+          :loading="loading"
+          block
+          native-type="submit"
+          @click="handleSubmit"
+        >
           注册
         </BaseButton>
         <div class="auth-card__footer">

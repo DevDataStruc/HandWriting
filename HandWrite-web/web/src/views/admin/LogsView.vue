@@ -2,7 +2,13 @@
   <div class="logs-view">
     <BaseCard title="审计日志">
       <template #extra>
-        <el-input v-model="query.keyword" placeholder="搜索操作/用户" clearable style="width: 240px" @keyup.enter="loadData" />
+        <el-input
+          v-model="query.keyword"
+          placeholder="搜索操作/用户"
+          clearable
+          style="width: 240px"
+          @keyup.enter="loadData"
+        />
         <el-button type="primary" @click="loadData">查询</el-button>
       </template>
       <el-table v-loading="loading" :data="list" border stripe>

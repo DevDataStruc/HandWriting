@@ -14,14 +14,20 @@
           </el-tooltip>
           <el-tooltip content="主题">
             <el-button link @click="toggleTheme">
-              <el-icon :size="18"><component :is="appStore.theme === 'dark' ? 'Sunny' : 'Moon'" /></el-icon>
+              <el-icon :size="18"
+                ><component :is="appStore.theme === 'dark' ? 'Sunny' : 'Moon'"
+              /></el-icon>
             </el-button>
           </el-tooltip>
           <el-dropdown>
             <div class="user-trigger">
               <UserAvatar :user="userStore.profile" :size="30" />
-              <span class="name">{{ userStore.profile?.nickname || userStore.profile?.username }}</span>
-              <el-tag v-if="userStore.isAdmin" type="success" size="small" effect="dark">ADMIN</el-tag>
+              <span class="name">{{
+                userStore.profile?.nickname || userStore.profile?.username
+              }}</span>
+              <el-tag v-if="userStore.isAdmin" type="success" size="small" effect="dark"
+                >ADMIN</el-tag
+              >
             </div>
             <template #dropdown>
               <el-dropdown-menu>

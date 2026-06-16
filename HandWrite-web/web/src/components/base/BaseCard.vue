@@ -1,5 +1,8 @@
 <template>
-  <div class="base-card" :class="[`base-card--${variant}`, { 'is-hoverable': hoverable, 'is-flat': flat }]">
+  <div
+    class="base-card"
+    :class="[`base-card--${variant}`, { 'is-hoverable': hoverable, 'is-flat': flat }]"
+  >
     <div v-if="title || $slots.header" class="base-card__header">
       <slot name="header">
         <div class="header-inner">
@@ -40,7 +43,10 @@ withDefaults(
   border-radius: $radius-lg;
   border: 1px solid $border-light;
   overflow: hidden;
-  transition: box-shadow $transition-base, transform $transition-base, border-color $transition-base;
+  transition:
+    box-shadow $transition-base,
+    transform $transition-base,
+    border-color $transition-base;
 
   &--default {
   }

@@ -2,8 +2,16 @@
   <div class="user-management">
     <BaseCard title="用户管理">
       <template #extra>
-        <el-input v-model="query.keyword" placeholder="搜索用户名/邮箱" clearable style="width: 240px" @keyup.enter="loadData">
-          <template #prefix><el-icon><Search /></el-icon></template>
+        <el-input
+          v-model="query.keyword"
+          placeholder="搜索用户名/邮箱"
+          clearable
+          style="width: 240px"
+          @keyup.enter="loadData"
+        >
+          <template #prefix
+            ><el-icon><Search /></el-icon
+          ></template>
         </el-input>
         <el-button type="primary" @click="loadData">查询</el-button>
       </template>
@@ -23,7 +31,13 @@
         <el-table-column prop="email" label="邮箱" min-width="180" />
         <el-table-column label="角色" width="160">
           <template #default="{ row }">
-            <el-tag v-for="r in row.roles" :key="r" size="small" effect="dark" style="margin-right: 4px">
+            <el-tag
+              v-for="r in row.roles"
+              :key="r"
+              size="small"
+              effect="dark"
+              style="margin-right: 4px"
+            >
               {{ r }}
             </el-tag>
           </template>

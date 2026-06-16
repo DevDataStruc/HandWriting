@@ -31,7 +31,9 @@
           <el-dropdown trigger="click">
             <div class="user-trigger">
               <UserAvatar :user="userStore.profile" :size="32" />
-              <span class="user-name">{{ userStore.profile?.nickname || userStore.profile?.username }}</span>
+              <span class="user-name">{{
+                userStore.profile?.nickname || userStore.profile?.username
+              }}</span>
               <el-icon><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
@@ -82,7 +84,9 @@ function onScroll() {
 
 function toggleLocale() {
   appStore.setLocale(appStore.locale === 'zh-CN' ? 'en-US' : 'zh-CN')
-  ElMessageBox.alert('i18n 已切换，开发模式下请在 store 中持久化', '提示', { confirmButtonText: 'OK' }).catch(() => undefined)
+  ElMessageBox.alert('i18n 已切换，开发模式下请在 store 中持久化', '提示', {
+    confirmButtonText: 'OK',
+  }).catch(() => undefined)
 }
 
 function goProfile() {
@@ -118,7 +122,9 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid transparent;
-  transition: border-color $transition-base, box-shadow $transition-base;
+  transition:
+    border-color $transition-base,
+    box-shadow $transition-base;
 
   &.is-scrolled {
     border-bottom-color: $border-base;
@@ -173,7 +179,9 @@ onUnmounted(() => {
   color: $text-regular;
   padding: $spacing-xs $spacing-sm;
   border-radius: $radius-md;
-  transition: color $transition-fast, background $transition-fast;
+  transition:
+    color $transition-fast,
+    background $transition-fast;
 
   &:hover {
     color: $color-primary;

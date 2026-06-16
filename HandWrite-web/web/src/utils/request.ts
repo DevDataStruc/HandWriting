@@ -140,7 +140,11 @@ export interface RequestOptions {
 }
 
 export const request = {
-  get<T = unknown>(url: string, params?: Record<string, unknown>, _options?: RequestOptions): Promise<T> {
+  get<T = unknown>(
+    url: string,
+    params?: Record<string, unknown>,
+    _options?: RequestOptions
+  ): Promise<T> {
     return instance.get(url, { params }) as unknown as Promise<T>
   },
   post<T = unknown>(url: string, data?: unknown, _options?: RequestOptions): Promise<T> {
@@ -149,7 +153,11 @@ export const request = {
   put<T = unknown>(url: string, data?: unknown, _options?: RequestOptions): Promise<T> {
     return instance.put(url, data) as unknown as Promise<T>
   },
-  delete<T = unknown>(url: string, params?: Record<string, unknown>, _options?: RequestOptions): Promise<T> {
+  delete<T = unknown>(
+    url: string,
+    params?: Record<string, unknown>,
+    _options?: RequestOptions
+  ): Promise<T> {
     return instance.delete(url, { params }) as unknown as Promise<T>
   },
   patch<T = unknown>(url: string, data?: unknown, _options?: RequestOptions): Promise<T> {

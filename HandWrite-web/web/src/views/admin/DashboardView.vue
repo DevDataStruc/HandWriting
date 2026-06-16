@@ -45,7 +45,12 @@ import {
 import VChart from 'vue-echarts'
 import BaseCard from '@/components/base/BaseCard.vue'
 import StatsCard from '@/components/business/StatsCard.vue'
-import { fetchOverview, fetchSampleTrend, fetchStatusDistribution, fetchTopContributors } from '@/api/stats'
+import {
+  fetchOverview,
+  fetchSampleTrend,
+  fetchStatusDistribution,
+  fetchTopContributors,
+} from '@/api/stats'
 import type {
   SampleTrend,
   StatsOverview,
@@ -65,7 +70,9 @@ use([
   DataZoomComponent,
 ])
 
-const statsCards = ref<{ label: string; value: number; icon: string; variant: string; trend: number }[]>([])
+const statsCards = ref<
+  { label: string; value: number; icon: string; variant: string; trend: number }[]
+>([])
 
 const trendOption = ref<Record<string, unknown>>({})
 const statusOption = ref<Record<string, unknown>>({})
@@ -90,7 +97,13 @@ async function loadAll() {
 
 function bindOverview(d: StatsOverview) {
   statsCards.value = [
-    { label: '累计样本', value: d.totalSamples, icon: 'Document', variant: 'primary', trend: d.growthRate ?? 0 },
+    {
+      label: '累计样本',
+      value: d.totalSamples,
+      icon: 'Document',
+      variant: 'primary',
+      trend: d.growthRate ?? 0,
+    },
     { label: '注册用户', value: d.totalUsers, icon: 'User', variant: 'success', trend: 0 },
     { label: '待审核', value: d.pendingAudits, icon: 'Bell', variant: 'warning', trend: 0 },
     { label: '今日新增', value: d.todaySamples, icon: 'TrendCharts', variant: 'default', trend: 0 },
@@ -124,7 +137,10 @@ function bindTrend(d: SampleTrend) {
         areaStyle: {
           color: {
             type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: 'rgba(34, 197, 94, 0.4)' },
               { offset: 1, color: 'rgba(34, 197, 94, 0)' },
@@ -188,7 +204,10 @@ function bindContributors(d: TopContributor[]) {
         itemStyle: {
           color: {
             type: 'linear',
-            x: 0, y: 0, x2: 1, y2: 0,
+            x: 0,
+            y: 0,
+            x2: 1,
+            y2: 0,
             colorStops: [
               { offset: 0, color: '#22C55E' },
               { offset: 1, color: '#4ADE80' },

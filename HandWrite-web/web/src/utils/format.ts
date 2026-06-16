@@ -8,7 +8,10 @@ dayjs.extend(duration)
 dayjs.locale('zh-cn')
 
 /** 标准化日期显示 */
-export function formatDate(value: string | number | Date | null | undefined, pattern = 'YYYY-MM-DD HH:mm:ss'): string {
+export function formatDate(
+  value: string | number | Date | null | undefined,
+  pattern = 'YYYY-MM-DD HH:mm:ss'
+): string {
   if (!value) return '-'
   const d = dayjs(value)
   return d.isValid() ? d.format(pattern) : '-'
@@ -39,11 +42,17 @@ export function formatDuration(ms: number | undefined | null): string {
 }
 
 /** 数字千分位 */
-export function formatNumber(value: number | string | null | undefined, fractionDigits = 0): string {
+export function formatNumber(
+  value: number | string | null | undefined,
+  fractionDigits = 0
+): string {
   if (value == null) return '-'
   const n = Number(value)
   if (isNaN(n)) return '-'
-  return n.toLocaleString('zh-CN', { maximumFractionDigits: fractionDigits, minimumFractionDigits: fractionDigits })
+  return n.toLocaleString('zh-CN', {
+    maximumFractionDigits: fractionDigits,
+    minimumFractionDigits: fractionDigits,
+  })
 }
 
 /** 文件大小 */

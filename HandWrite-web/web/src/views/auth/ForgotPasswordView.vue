@@ -5,17 +5,39 @@
         <h1>找回密码</h1>
         <p>输入注册邮箱，重置你的密码</p>
       </div>
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleSubmit">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent="handleSubmit"
+      >
         <el-form-item label="注册邮箱" prop="email">
           <BaseInput v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <BaseInput v-model="form.newPassword" type="password" show-password placeholder="6-32 位字符" />
+          <BaseInput
+            v-model="form.newPassword"
+            type="password"
+            show-password
+            placeholder="6-32 位字符"
+          />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
-          <BaseInput v-model="form.confirmPassword" type="password" show-password placeholder="请再次输入密码" />
+          <BaseInput
+            v-model="form.confirmPassword"
+            type="password"
+            show-password
+            placeholder="请再次输入密码"
+          />
         </el-form-item>
-        <BaseButton type="primary" :loading="loading" block native-type="submit" @click="handleSubmit">
+        <BaseButton
+          type="primary"
+          :loading="loading"
+          block
+          native-type="submit"
+          @click="handleSubmit"
+        >
           提交重置
         </BaseButton>
         <div class="auth-card__footer">
@@ -94,15 +116,25 @@ async function handleSubmit() {
   &__header {
     text-align: center;
     margin-bottom: $spacing-lg;
-    h1 { font-size: 24px; color: $text-primary; margin-bottom: $spacing-xs; }
-    p { color: $text-secondary; font-size: $font-size-sm; }
+    h1 {
+      font-size: 24px;
+      color: $text-primary;
+      margin-bottom: $spacing-xs;
+    }
+    p {
+      color: $text-secondary;
+      font-size: $font-size-sm;
+    }
   }
   &__footer {
     text-align: center;
     margin-top: $spacing-md;
     font-size: $font-size-sm;
     color: $text-secondary;
-    a { color: $color-primary; font-weight: 500; }
+    a {
+      color: $color-primary;
+      font-weight: 500;
+    }
   }
 }
 </style>

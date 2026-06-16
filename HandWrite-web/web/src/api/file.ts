@@ -21,7 +21,8 @@ export async function directUpload(
     xhr.upload.onprogress = (e) => {
       if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded * 100) / e.total))
     }
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('upload failed')))
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('upload failed'))
     xhr.onerror = () => reject(new Error('network error'))
     xhr.send(file)
   })

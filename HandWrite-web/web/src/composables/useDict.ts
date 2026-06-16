@@ -15,7 +15,9 @@ export function useDict(options: UseDictOptions = {}) {
   const currentIndex = ref(0)
 
   const list = computed<DictChar[]>(() => dictStore.chars)
-  const current = computed<DictChar | null>(() => list.value[currentIndex.value] || dictStore.currentChar)
+  const current = computed<DictChar | null>(
+    () => list.value[currentIndex.value] || dictStore.currentChar
+  )
 
   async function loadAll(params?: { category?: string; difficulty?: number }) {
     await dictStore.fetchChars({

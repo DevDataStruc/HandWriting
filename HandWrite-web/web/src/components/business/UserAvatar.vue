@@ -35,7 +35,9 @@ const customStyle = computed(() => ({
 }))
 
 const displaySrc = computed<string | undefined>(() => props.src || props.user?.avatar)
-const displayName = computed<string>(() => props.name || props.user?.nickname || props.user?.username || '?')
+const displayName = computed<string>(
+  () => props.name || props.user?.nickname || props.user?.username || '?'
+)
 const initial = computed(() => displayName.value.slice(0, 1).toUpperCase())
 
 function onError(e: Event) {

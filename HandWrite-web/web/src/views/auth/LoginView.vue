@@ -5,9 +5,20 @@
         <h1>欢迎回来</h1>
         <p>登录以继续你的手写采集之旅</p>
       </div>
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleSubmit">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent="handleSubmit"
+      >
         <el-form-item label="用户名" prop="username">
-          <BaseInput v-model="form.username" placeholder="请输入用户名" :prefix-icon="'User'" clearable />
+          <BaseInput
+            v-model="form.username"
+            placeholder="请输入用户名"
+            :prefix-icon="'User'"
+            clearable
+          />
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <BaseInput
@@ -31,7 +42,13 @@
           <el-checkbox v-model="remember">记住我</el-checkbox>
           <router-link :to="{ name: 'ForgotPassword' }">忘记密码？</router-link>
         </div>
-        <BaseButton type="primary" :loading="loading" block native-type="submit" @click="handleSubmit">
+        <BaseButton
+          type="primary"
+          :loading="loading"
+          block
+          native-type="submit"
+          @click="handleSubmit"
+        >
           登录
         </BaseButton>
         <div class="auth-card__footer">

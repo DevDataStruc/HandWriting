@@ -8,7 +8,9 @@ export type Locale = 'zh-CN' | 'en-US'
 
 export const useAppStore = defineStore('app', () => {
   const sidebarCollapsed = ref<boolean>(storage.get<boolean>(SIDEBAR_KEY, false))
-  const theme = ref<ThemeMode>((storage.getString(THEME_KEY, ThemeMode.LIGHT) as ThemeMode) || ThemeMode.LIGHT)
+  const theme = ref<ThemeMode>(
+    (storage.getString(THEME_KEY, ThemeMode.LIGHT) as ThemeMode) || ThemeMode.LIGHT
+  )
   const locale = ref<Locale>((storage.getString(LOCALE_KEY, 'zh-CN') as Locale) || 'zh-CN')
   const isMobile = ref<boolean>(window.innerWidth < 768)
   const devicePixelRatio = ref<number>(window.devicePixelRatio || 1)
