@@ -1,5 +1,122 @@
-/target/
+# ============================================================
+#  HandWrite 项目根 .gitignore
+#  说明：
+#   - /xxx 表示项目根目录下的 xxx
+#   - **/xxx 表示任意深度的子目录下的 xxx
+#   - 末尾带 / 的目录会匹配目录本身及其内容
+# ============================================================
+
+# ---------------- IDE / 编辑器 ----------------
 /.idea/
 /.vscode/
+**/.idea/
+**/.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+nbproject/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ---------------- 构建产物 ----------------
+/target
+**/target
+/build/
+**/build/
+/dist/
+**/dist/
+out/
+**/out/
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+
+# ---------------- 运行时输出 ----------------
 /logs/
+**/logs/
+*.log
+logs/
+errlog/
+**/errlog/
+*.pid
+
+# ---------------- 环境变量 / 密钥 ----------------
+# 真实 .env 不入库（包含密码、key 等敏感信息）
 /.env
+**/.env
+.env.local
+.env.*.local
+**/.env.local
+**/.env.*.local
+
+# ⚠️ 重要：.env.example 是模板，必须入库！
+#   显式反忽略（防止被上级目录的 .env* 规则误伤）
+!.env.example
+!**/.env.example
+!HandWrite-client/.env.example
+!HandWrite-web/web/.env.example
+!HandWrite-web/web/.env.development
+!HandWrite-web/web/.env.production
+
+# 文档中可能附带的密钥说明文件不入库
+Design/AccessKey.md
+**/AccessKey.md
+**/access-key.md
+**/secret.key
+**/*.pem
+**/*.key
+**/*.pfx
+
+# ---------------- 工具 / 脚本产物 ----------------
+/HandWrite-client/tools/
+/HandWrite-client/11.ll
+**/*.ll
+**/*.o
+**/*.so
+**/*.dll
+**/*.dylib
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/node_modules/
+**/.pnpm-store/
+**/coverage/
+**/.nyc_output/
+**/.cache/
+
+# ---------------- 临时文件 ----------------
+*.tmp
+*.bak
+*.swp
+*.orig
+*.rej
+.idea/
+.gradle/
+local.properties
+*.iml
+.flattened-pom.xml
+.mvn/
+mvnw
+mvnw.cmd
+
+# ---------------- 操作系统 / 杂项 ----------------
+.turbo/
+.turbo
+*.tsbuildinfo
+.parcel-cache/
+.next/
+.nuxt/
+.svelte-kit/
+.vercel/
+.netlify/
