@@ -51,6 +51,18 @@ export default {
     submit: 'Submit Sample',
     uploading: 'Uploading',
     success: 'Upload success',
+    brush: 'Brush',
+    size: 'Tip Size',
+    angle: 'Tip Angle',
+    pressure: 'Pressure',
+    pressureTip: 'When enabled, strokes respond to pen/tablet pressure',
+    undo: 'Undo',
+    redo: 'Redo',
+    color: 'Color',
+    customColor: 'Custom Color',
+    hintWillow: 'Willow leaf brush: tapered start, full middle, sharp end',
+    hintBrush: 'Brush: soft, elastic strokes',
+    hintPen: 'Pen: uniform line width, great for outlines',
   },
   sample: {
     status: {

@@ -51,6 +51,18 @@ export default {
     submit: '提交样本',
     uploading: '上传中',
     success: '上传成功',
+    brush: '笔刷',
+    size: '笔尖大小',
+    angle: '笔尖角度',
+    pressure: '压感',
+    pressureTip: '开启后，笔触会响应压力（压感笔/触屏）',
+    undo: '撤销',
+    redo: '重做',
+    color: '颜色',
+    customColor: '自定义颜色',
+    hintWillow: '当前为柳叶笔，模拟笔锋：起笔尖、中段宽、收笔利',
+    hintBrush: '当前为毛笔，笔触柔软富有弹性',
+    hintPen: '当前为钢笔，线宽均匀，适合勾边',
   },
   sample: {
     status: {
