@@ -1,0 +1,1356 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "HandWrite-client API",
+    "description": "手写体收集和管理系统 - 客户端 API 文档",
+    "contact": {
+      "name": "handwriting-team",
+      "email": "dev@example.com"
+    },
+    "license": {
+      "name": "Apache 2.0"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/user/profile": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "获取个人信息",
+        "operationId": "profile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RUserVO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "修改个人信息",
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RUserVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sample/upload": {
+      "post": {
+        "tags": [
+          "手写体样本"
+        ],
+        "summary": "上传样本（提交元数据，文件已通过直传上传至对象存储）",
+        "operationId": "upload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleUploadDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RSampleVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/file/sign": {
+      "post": {
+        "tags": [
+          "文件"
+        ],
+        "summary": "获取对象存储直传签名",
+        "operationId": "sign",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileSignDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFileSignVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "tags": [
+          "鉴权"
+        ],
+        "summary": "用户注册",
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RLoginVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "鉴权"
+        ],
+        "summary": "刷新 Access Token",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RLoginVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "鉴权"
+        ],
+        "summary": "用户注销",
+        "operationId": "logout",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": [
+          "鉴权"
+        ],
+        "summary": "用户登录",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RLoginVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/{id}/reject": {
+      "post": {
+        "tags": [
+          "审核"
+        ],
+        "summary": "审核驳回",
+        "operationId": "reject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditDecisionDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/{id}/approve": {
+      "post": {
+        "tags": [
+          "审核"
+        ],
+        "summary": "审核通过",
+        "operationId": "approve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stats/trend": {
+      "get": {
+        "tags": [
+          "统计"
+        ],
+        "summary": "样本趋势（最近 N 天）",
+        "operationId": "trend",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stats/overview": {
+      "get": {
+        "tags": [
+          "统计"
+        ],
+        "summary": "总览数据",
+        "operationId": "overview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sample/{id}": {
+      "get": {
+        "tags": [
+          "手写体样本"
+        ],
+        "summary": "样本详情",
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RSampleVO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "手写体样本"
+        ],
+        "summary": "删除样本（仅本人 / 未审核通过）",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sample/page": {
+      "get": {
+        "tags": [
+          "手写体样本"
+        ],
+        "summary": "分页查询我的样本",
+        "operationId": "myPage",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RPageResultSampleVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dict/chars": {
+      "get": {
+        "tags": [
+          "字符字典"
+        ],
+        "summary": "分页查询字符字典",
+        "operationId": "page",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RPageResultCharDict"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dict/chars/list": {
+      "get": {
+        "tags": [
+          "字符字典"
+        ],
+        "summary": "按分类列出字符（缓存友好）",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RListCharDict"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/captcha": {
+      "get": {
+        "tags": [
+          "鉴权"
+        ],
+        "summary": "获取图形验证码",
+        "operationId": "captcha",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/pending": {
+      "get": {
+        "tags": [
+          "审核"
+        ],
+        "summary": "待审核列表",
+        "operationId": "pending",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RPageResultSampleVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/history": {
+      "get": {
+        "tags": [
+          "审核"
+        ],
+        "summary": "审核历史",
+        "operationId": "history",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RPageResultSampleVO"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserProfileDTO": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "maxLength": 64,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "avatar": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "RUserVO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserVO"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "UserVO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastLoginTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "用户信息"
+      },
+      "SampleUploadDTO": {
+        "required": [
+          "charId",
+          "fileKey",
+          "fileSize"
+        ],
+        "type": "object",
+        "properties": {
+          "charId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fileKey": {
+            "type": "string"
+          },
+          "fileUrl": {
+            "type": "string"
+          },
+          "fileSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "device": {
+            "type": "string"
+          }
+        }
+      },
+      "RSampleVO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SampleVO"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "SampleVO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "charId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fileKey": {
+            "type": "string"
+          },
+          "fileUrl": {
+            "type": "string"
+          },
+          "fileSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "device": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejectReason": {
+            "type": "string"
+          },
+          "auditedBy": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "auditedTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "样本视图"
+      },
+      "FileSignDTO": {
+        "required": [
+          "ext",
+          "purpose"
+        ],
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string"
+          },
+          "ext": {
+            "type": "string"
+          },
+          "bizId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "FileSignVO": {
+        "type": "object",
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "description": "对象存储 Bucket"
+          },
+          "objectKey": {
+            "type": "string",
+            "description": "对象 Key（最终路径）"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "description": "PUT 方式的上传 URL，前端可直接 PUT 文件"
+          },
+          "method": {
+            "type": "string",
+            "description": "上传方式：PUT"
+          },
+          "expireSeconds": {
+            "type": "integer",
+            "description": "签名过期时间（秒）",
+            "format": "int64"
+          },
+          "requiredHeader": {
+            "type": "string",
+            "description": "请求头限制（如不需要可为空）"
+          }
+        },
+        "description": "对象存储直传签名"
+      },
+      "RFileSignVO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FileSignVO"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "RegisterDTO": {
+        "required": [
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "maxLength": 64,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 64,
+            "minLength": 6,
+            "type": "string"
+          },
+          "nickname": {
+            "maxLength": 64,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "LoginVO": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Access Token"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh Token"
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "Token 类型"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Access Token 过期秒数",
+            "format": "int64"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserInfo"
+          }
+        },
+        "description": "登录成功响应"
+      },
+      "RLoginVO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginVO"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "UserInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "用户信息"
+      },
+      "RefreshTokenDTO": {
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        }
+      },
+      "RVoid": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "type": "object",
+            "description": "业务数据"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "LoginDTO": {
+        "required": [
+          "captchaCode",
+          "captchaKey",
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "maxLength": 64,
+            "minLength": 3,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 64,
+            "minLength": 6,
+            "type": "string"
+          },
+          "captchaKey": {
+            "type": "string"
+          },
+          "captchaCode": {
+            "maxLength": 6,
+            "minLength": 4,
+            "type": "string"
+          }
+        }
+      },
+      "AuditDecisionDTO": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "RMapStringObject": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "description": "业务数据"
+            },
+            "description": "业务数据"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "PageQuery": {
+        "type": "object",
+        "properties": {
+          "pageNum": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResultSampleVO": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "format": "int64"
+          },
+          "pageNum": {
+            "type": "integer",
+            "description": "当前页码",
+            "format": "int64"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "每页大小",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "description": "数据列表",
+            "items": {
+              "$ref": "#/components/schemas/SampleVO"
+            }
+          }
+        },
+        "description": "分页结果"
+      },
+      "RPageResultSampleVO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultSampleVO"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "CharDict": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "charValue": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "数据列表"
+      },
+      "PageResultCharDict": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "format": "int64"
+          },
+          "pageNum": {
+            "type": "integer",
+            "description": "当前页码",
+            "format": "int64"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "每页大小",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "description": "数据列表",
+            "items": {
+              "$ref": "#/components/schemas/CharDict"
+            }
+          }
+        },
+        "description": "分页结果"
+      },
+      "RPageResultCharDict": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultCharDict"
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      },
+      "RListCharDict": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0 表示成功",
+            "format": "int32"
+          },
+          "msg": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "type": "array",
+            "description": "业务数据",
+            "items": {
+              "$ref": "#/components/schemas/CharDict"
+            }
+          },
+          "ts": {
+            "type": "integer",
+            "description": "服务器时间戳（毫秒）",
+            "format": "int64"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "description": "统一 API 响应"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "name": "BearerAuth",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
+
+
+
