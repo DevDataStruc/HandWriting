@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import type { Role } from '@/types/role'
+import { Role } from '@/types/role'
 import { setUnauthorizedHandler } from '@/utils/request'
 import { storage } from '@/utils/storage'
 import { TOKEN_KEY } from '@/utils/constants'
@@ -15,6 +15,10 @@ declare module 'vue-router' {
     keepAlive?: boolean
   }
 }
+
+const ALL_ROLES: Role[] = [Role.USER, Role.AUDITOR, Role.ADMIN]
+const STAFF_ROLES: Role[] = [Role.AUDITOR, Role.ADMIN]
+const ADMIN_ONLY: Role[] = [Role.ADMIN]
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -44,19 +48,19 @@ export const routes: RouteRecordRaw[] = [
         path: 'sample/collect',
         name: 'Collect',
         component: () => import('@/views/sample/CollectView.vue'),
-        meta: { title: '手写体采集', requiresAuth: true, roles: ['USER', 'AUDITOR', 'ADMIN'] },
+        meta: { title: '手写体采集', requiresAuth: true, roles: ALL_ROLES },
       },
       {
         path: 'sample/my',
         name: 'MySamples',
         component: () => import('@/views/sample/MySamplesView.vue'),
-        meta: { title: '我的样本', requiresAuth: true, roles: ['USER', 'AUDITOR', 'ADMIN'] },
+        meta: { title: '我的样本', requiresAuth: true, roles: ALL_ROLES },
       },
       {
         path: 'sample/:id',
         name: 'SampleDetail',
         component: () => import('@/views/sample/SampleDetailView.vue'),
-        meta: { title: '样本详情', requiresAuth: true, roles: ['USER', 'AUDITOR', 'ADMIN'] },
+        meta: { title: '样本详情', requiresAuth: true, roles: ALL_ROLES },
         props: true,
       },
     ],
@@ -64,7 +68,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
-    meta: { layout: 'admin', requiresAuth: true, roles: ['AUDITOR', 'ADMIN'] },
+    meta: { layout: 'admin', requiresAuth: true, roles: STAFF_ROLES },
     children: [
       {
         path: '',
@@ -74,31 +78,31 @@ export const routes: RouteRecordRaw[] = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/views/admin/DashboardView.vue'),
-        meta: { title: '数据看板', icon: 'data', roles: ['AUDITOR', 'ADMIN'] },
+        meta: { title: '数据看板', icon: 'data', roles: STAFF_ROLES },
       },
       {
         path: 'users',
         name: 'UserManagement',
         component: () => import('@/views/admin/UserManagementView.vue'),
-        meta: { title: '用户管理', icon: 'user', roles: ['ADMIN'] },
+        meta: { title: '用户管理', icon: 'user', roles: ADMIN_ONLY },
       },
       {
         path: 'audit',
         name: 'SampleAudit',
         component: () => import('@/views/admin/SampleAuditView.vue'),
-        meta: { title: '样本审核', icon: 'check', roles: ['AUDITOR', 'ADMIN'] },
+        meta: { title: '样本审核', icon: 'check', roles: STAFF_ROLES },
       },
       {
         path: 'stats',
         name: 'Stats',
         component: () => import('@/views/admin/StatsView.vue'),
-        meta: { title: '统计分析', icon: 'chart', roles: ['ADMIN'] },
+        meta: { title: '统计分析', icon: 'chart', roles: ADMIN_ONLY },
       },
       {
         path: 'logs',
         name: 'Logs',
         component: () => import('@/views/admin/LogsView.vue'),
-        meta: { title: '审计日志', icon: 'log', roles: ['ADMIN'] },
+        meta: { title: '审计日志', icon: 'log', roles: ADMIN_ONLY },
       },
     ],
   },

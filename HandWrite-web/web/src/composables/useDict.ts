@@ -1,6 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useDictStore } from '@/stores/dict'
-import type { DictChar } from '@/api/contracts/sample'
+import type { CharDict } from '@/api/contracts/sample'
 
 export interface UseDictOptions {
   autoLoad?: boolean
@@ -14,13 +14,13 @@ export function useDict(options: UseDictOptions = {}) {
   const dictStore = useDictStore()
   const currentIndex = ref(0)
 
-  const list = computed<DictChar[]>(() => dictStore.chars)
-  const current = computed<DictChar | null>(
+  const list = computed<CharDict[]>(() => dictStore.chars)
+  const current = computed<CharDict | null>(
     () => list.value[currentIndex.value] || dictStore.currentChar
   )
 
   async function loadAll(params?: { category?: string; difficulty?: number }) {
-    await dictStore.fetchChars({
+    await dictStore.fetchPageChars({
       pageNum: 1,
       pageSize: options.pageSize ?? 50,
       ...params,
@@ -29,7 +29,6 @@ export function useDict(options: UseDictOptions = {}) {
 
   async function loadRandom() {
     const c = await dictStore.fetchRandom()
-    dictStore.setCurrent(c)
     return c
   }
 

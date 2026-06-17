@@ -18,7 +18,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import BaseButton from '@/components/base/BaseButton.vue'
 
@@ -33,8 +32,6 @@ const emit = defineEmits<{
   upload: [blob: Blob]
   clear: []
 }>()
-
-const localProgress = ref(0)
 
 function handleUpload() {
   if (!props.hasContent) {

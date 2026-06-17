@@ -7,17 +7,21 @@ function fullKey(key: string): string {
   return `${PREFIX}${key}`
 }
 
+function get<T>(key: string): T | undefined
+function get<T>(key: string, fallback: T): T
+function get<T>(key: string, fallback?: T): T | undefined {
+  try {
+    const raw = localStorage.getItem(fullKey(key))
+    if (raw === null) return fallback
+    return JSON.parse(raw) as T
+  } catch (err) {
+    console.warn('[storage] get error', err)
+    return fallback
+  }
+}
+
 export const storage = {
-  get<T = unknown>(key: string, fallback?: T): T | undefined {
-    try {
-      const raw = localStorage.getItem(fullKey(key))
-      if (raw === null) return fallback
-      return JSON.parse(raw) as T
-    } catch (err) {
-      console.warn('[storage] get error', err)
-      return fallback
-    }
-  },
+  get,
 
   getString(key: string, fallback = ''): string {
     try {

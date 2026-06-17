@@ -13,7 +13,7 @@
         @submit.prevent="handleSubmit"
       >
         <el-form-item label="用户名" prop="username">
-          <BaseInput v-model="form.username" placeholder="3-20 位字母/数字/下划线" />
+          <BaseInput v-model="form.username" placeholder="3-64 位字母/数字/_-." />
         </el-form-item>
         <el-form-item label="昵称" prop="nickname">
           <BaseInput v-model="form.nickname" placeholder="请输入昵称" />
@@ -25,15 +25,7 @@
           <BaseInput
             v-model="form.password"
             type="password"
-            placeholder="6-32 位字符"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <BaseInput
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="请再次输入密码"
+            placeholder="6-64 位字符"
             show-password
           />
         </el-form-item>
@@ -63,7 +55,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { register } from '@/api/auth'
-import { isEmail, isPassword, isUsername } from '@/utils/validator'
+import { isEmail, isPassword } from '@/utils/validator'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
@@ -74,13 +66,15 @@ const form = reactive({
   nickname: '',
   email: '',
   password: '',
-  confirmPassword: '',
 })
 
 const rules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { validator: (_r, v, cb) => (isUsername(v) ? cb() : cb(new Error('用户名格式不正确'))) },
+    {
+      validator: (_r, v, cb) =>
+        /^[A-Za-z0-9_.-]{3,64}$/.test(v) ? cb() : cb(new Error('用户名为 3-64 位字母/数字/_-.')),
+    },
   ],
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
   email: [
@@ -90,13 +84,6 @@ const rules: FormRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { validator: (_r, v, cb) => (isPassword(v) ? cb() : cb(new Error('密码格式不正确'))) },
-  ],
-  confirmPassword: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
-    {
-      validator: (_r, v, cb) => (v === form.password ? cb() : cb(new Error('两次密码不一致'))),
-      trigger: 'blur',
-    },
   ],
 }
 
@@ -124,13 +111,11 @@ async function handleSubmit() {
   min-height: 100vh;
   padding: $spacing-md;
 }
-
 .auth-card {
   width: 100%;
   max-width: 460px;
   border-radius: $radius-2xl;
   padding: $spacing-xl;
-
   &__header {
     text-align: center;
     margin-bottom: $spacing-lg;

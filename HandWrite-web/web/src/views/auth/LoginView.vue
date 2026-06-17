@@ -67,7 +67,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
-import { fetchCaptcha, login } from '@/api/auth'
+import { getCaptcha } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -78,7 +78,7 @@ const formRef = ref<FormInstance>()
 const loading = ref(false)
 const remember = ref(true)
 const captchaData = ref<string>('')
-const captchaId = ref<string>('')
+const captchaKey = ref<string>('')
 
 const form = reactive({
   username: '',
@@ -94,9 +94,9 @@ const rules: FormRules = {
 
 async function refreshCaptcha() {
   try {
-    const data = await fetchCaptcha()
-    captchaId.value = data.captchaId
-    captchaData.value = data.imageData
+    const data = await getCaptcha()
+    captchaKey.value = data.captchaKey
+    captchaData.value = data.imageBase64
   } catch {
     // mock 模式可能未实现，忽略
   }
@@ -111,10 +111,11 @@ async function handleSubmit() {
       await userStore.login({
         username: form.username,
         password: form.password,
-        captchaId: captchaId.value,
+        captchaKey: captchaKey.value,
         captchaCode: form.captchaCode,
       })
-      await userStore.fetchProfile()
+      // 后台拉一次完整 profile（覆盖 LoginVO 中精简的用户信息）
+      await userStore.fetchProfile().catch(() => null)
       ElMessage.success('登录成功')
       const redirect = (route.query.redirect as string) || '/'
       router.replace(redirect)

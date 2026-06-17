@@ -20,10 +20,12 @@
         <el-table-column label="用户" min-width="200">
           <template #default="{ row }">
             <div class="user-cell">
-              <UserAvatar :user="row" :size="32" />
+              <UserAvatar :user="row as UserProfile" :size="32" />
               <div>
-                <div class="name">{{ row.nickname || row.username }}</div>
-                <div class="sub">@{{ row.username }}</div>
+                <div class="name">
+                  {{ (row as UserProfile).nickname || (row as UserProfile).username }}
+                </div>
+                <div class="sub">@{{ (row as UserProfile).username }}</div>
               </div>
             </div>
           </template>
@@ -32,7 +34,7 @@
         <el-table-column label="角色" width="160">
           <template #default="{ row }">
             <el-tag
-              v-for="r in row.roles"
+              v-for="r in (row as UserProfile).roles"
               :key="r"
               size="small"
               effect="dark"
@@ -45,19 +47,24 @@
         <el-table-column prop="sampleCount" label="样本数" width="100" align="right" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'danger'" size="small">
-              {{ row.status === 'active' ? '正常' : '已禁用' }}
+            <el-tag
+              :type="(row as UserProfile).statusExt === 'active' ? 'success' : 'danger'"
+              size="small"
+            >
+              {{ (row as UserProfile).statusExt === 'active' ? '正常' : '已禁用' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="注册时间" width="180">
-          <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+          <template #default="{ row }">{{
+            formatDate((row as UserProfile).createdAt || (row as UserProfile).createTime)
+          }}</template>
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small">编辑</el-button>
-            <el-button link type="danger" size="small" @click="toggleStatus(row)">
-              {{ row.status === 'active' ? '禁用' : '启用' }}
+            <el-button link type="danger" size="small" @click="toggleStatus(row as UserProfile)">
+              {{ (row as UserProfile).statusExt === 'active' ? '禁用' : '启用' }}
             </el-button>
           </template>
         </el-table-column>
@@ -100,8 +107,11 @@ const query = reactive({
 async function loadData() {
   loading.value = true
   try {
-    // 此处使用通用 request 调用 /admin/users 列表
-    const res = await request.get<{ list: UserProfile[]; total: number }>('/admin/users', query)
+    // 此处使用通用 request 调用 /admin/users 列表（前端扩展）
+    const res = await request.get<{ list: UserProfile[]; total: number }>(
+      '/admin/users',
+      query as unknown as Record<string, unknown>
+    )
     list.value = res.list
     total.value = res.total
   } catch (err) {
@@ -114,7 +124,7 @@ async function loadData() {
 }
 
 function toggleStatus(row: UserProfile) {
-  ElMessage.info(`已 ${row.status === 'active' ? '禁用' : '启用'} ${row.username}（演示）`)
+  ElMessage.info(`已 ${row.statusExt === 'active' ? '禁用' : '启用'} ${row.username}（演示）`)
 }
 
 onMounted(() => {

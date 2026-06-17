@@ -22,9 +22,9 @@
             style="width: 130px"
             @change="onSearch"
           >
-            <el-option :label="t('samples.pending')" value="PENDING" />
-            <el-option :label="t('samples.approved')" value="APPROVED" />
-            <el-option :label="t('samples.rejected')" value="REJECTED" />
+            <el-option :label="t('samples.pending')" :value="0" />
+            <el-option :label="t('samples.approved')" :value="1" />
+            <el-option :label="t('samples.rejected')" :value="2" />
           </el-select>
           <el-button v-if="selectedIds.length > 0" type="danger" plain @click="onBatchDelete">
             <el-icon><Delete /></el-icon>
@@ -58,27 +58,27 @@
             @change="onSelectChange(item.id, $event)"
           />
           <div class="sample-card__image" @click="goDetail(item.id)">
-            <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.char" loading="lazy" />
-            <span v-else class="placeholder">{{ item.char || '?' }}</span>
+            <img
+              v-if="displayUrl(item)"
+              :src="displayUrl(item)"
+              :alt="displayChar(item)"
+              loading="lazy"
+            />
+            <span v-else class="placeholder">{{ displayChar(item) || '?' }}</span>
           </div>
           <div class="sample-card__info">
-            <div class="char">{{ item.char || item.charId }}</div>
+            <div class="char">{{ displayChar(item) || item.charId }}</div>
             <div class="tags">
               <el-tag :type="statusType(item.status)" size="small" effect="light">
                 {{ statusLabel(item.status) }}
               </el-tag>
-              <el-tag
-                v-if="(item as { local?: boolean }).local"
-                type="info"
-                size="small"
-                effect="plain"
-              >
+              <el-tag v-if="isLocal(item)" type="info" size="small" effect="plain">
                 本地草稿
               </el-tag>
             </div>
           </div>
           <div class="sample-card__meta">
-            <span class="time">{{ formatDate(item.createdAt, 'YYYY-MM-DD HH:mm') }}</span>
+            <span class="time">{{ formatDate(item.createTime, 'YYYY-MM-DD HH:mm') }}</span>
             <span v-if="item.strokeCount" class="stroke-count">
               {{ t('samples.strokes') }} {{ item.strokeCount }}
             </span>
@@ -156,7 +156,7 @@ import {
   pngUrlToSvgString,
   triggerDownload,
 } from '@/utils/download'
-import type { Sample, SampleStatus } from '@/api/contracts/sample'
+import type { SampleVO } from '@/api/contracts/sample'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -164,21 +164,32 @@ const sampleStore = useSampleStore()
 
 const query = reactive({
   keyword: '',
-  status: undefined as SampleStatus | undefined,
+  status: undefined as number | undefined,
 })
 
 const selectedIds = ref<string[]>([])
 const batchMode = ref(false)
 
-function statusType(s: SampleStatus) {
-  return s === 'APPROVED' ? 'success' : s === 'REJECTED' ? 'danger' : 'warning'
+function statusType(s: number) {
+  return s === 1 ? 'success' : s === 2 ? 'danger' : 'warning'
 }
-function statusLabel(s: SampleStatus) {
-  return s === 'APPROVED'
-    ? t('samples.approved')
-    : s === 'REJECTED'
-      ? t('samples.rejected')
-      : t('samples.pending')
+function statusLabel(s: number) {
+  return s === 1 ? t('samples.approved') : s === 2 ? t('samples.rejected') : t('samples.pending')
+}
+
+/** 显示用的图片 URL：优先 thumbUrl > fileUrl > 本地 imageUrl */
+function displayUrl(item: SampleVO): string {
+  const local = (item as { imageUrl?: string }).imageUrl
+  return item.thumbUrl || item.fileUrl || local || ''
+}
+
+/** 显示用的字符：char > 本地扩展 > charValue */
+function displayChar(item: SampleVO): string {
+  return item.char || (item as { charValue?: string }).charValue || ''
+}
+
+function isLocal(item: SampleVO): boolean {
+  return String(item.id).startsWith('local-')
 }
 
 async function onSearch() {
@@ -225,37 +236,38 @@ async function onBatchDelete() {
   }
 }
 
-function onReCollect(item: Sample) {
+function onReCollect(item: SampleVO) {
   router.push({ name: 'Collect', query: { charId: String(item.charId) } })
 }
 
-async function onExport(cmd: string, item: Sample) {
-  if (!item.imageUrl) {
+async function onExport(cmd: string, item: SampleVO) {
+  const url = displayUrl(item)
+  if (!url) {
     ElMessage.warning('该样本无可下载图像')
     return
   }
-  const isLocal = String(item.id).startsWith('local-')
-  const base = `${item.char || 'sample'}_${item.id}`
+  const isLocalDraft = String(item.id).startsWith('local-')
+  const base = `${displayChar(item) || 'sample'}_${item.id}`
   try {
     if (cmd === 'png') {
-      if (isLocal && item.imageUrl.startsWith('data:image')) {
+      if (isLocalDraft && url.startsWith('data:image')) {
         // 本地草稿走 dataURL → Blob 通道，避开 CORS
-        const res = await fetch(item.imageUrl)
+        const res = await fetch(url)
         const blob = await res.blob()
         await downloadBlob(blob, `${base}.png`)
       } else {
-        const res = await fetch(item.imageUrl, { mode: 'cors' })
+        const res = await fetch(url, { mode: 'cors' })
         const blob = await res.blob()
         await downloadBlob(blob, `${base}.png`)
       }
     } else if (cmd === 'svg') {
-      const svg = await pngUrlToSvgString(item.imageUrl)
+      const svg = await pngUrlToSvgString(url)
       downloadSvgString(svg, `${base}.svg`)
     }
     ElMessage.success(`${t('samples.export')} ✓`)
   } catch (err) {
     console.warn('[export] fallback to direct link', err)
-    triggerDownload(item.imageUrl, `${base}.${cmd}`)
+    triggerDownload(url, `${base}.${cmd}`)
   }
 }
 

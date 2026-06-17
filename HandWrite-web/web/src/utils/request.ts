@@ -1,6 +1,5 @@
 import axios, {
   type AxiosInstance,
-  type AxiosRequestConfig,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
@@ -8,13 +7,22 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import { storage } from './storage'
-import { TOKEN_KEY } from './constants'
+import { TOKEN_KEY, REFRESH_TOKEN_KEY } from './constants'
 import { BusinessCode } from '@/api/contracts/common'
+import { refreshToken as refreshTokenApi } from '@/api/auth'
 
 NProgress.configure({ showSpinner: false, trickleSpeed: 200 })
 
 /**
- * 统一业务异常
+ * 扩展内部请求配置，支持自定义控制
+ */
+type ExtendedAxiosRequestConfig = InternalAxiosRequestConfig & {
+  /** 是否展示顶部进度条（默认 true） */
+  showProgress?: boolean
+}
+
+/**
+ * 统一业务异常（与 API.md §5 对齐）
  */
 export class ApiError extends Error {
   code: number
@@ -27,11 +35,18 @@ export class ApiError extends Error {
   }
 }
 
-/** Token 失效回调，由业务注册 */
+/** Token 失效回调，由业务注册（用于跳转登录） */
 type OnUnauthorized = () => void
 let unauthorizedHandler: OnUnauthorized | null = null
 export function setUnauthorizedHandler(fn: OnUnauthorized): void {
   unauthorizedHandler = fn
+}
+
+/** AccessToken 刷新回调（用于同步到 store） */
+type OnTokenRefreshed = (accessToken: string, refreshToken: string) => void
+let tokenRefreshedHandler: OnTokenRefreshed | null = null
+export function setTokenRefreshedHandler(fn: OnTokenRefreshed): void {
+  tokenRefreshedHandler = fn
 }
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/v1'
@@ -43,16 +58,74 @@ const instance: AxiosInstance = axios.create({
     'Content-Type': 'application/json;charset=UTF-8',
   },
   withCredentials: false,
+  /**
+   * 关键：后端 PageQuery 是 @ModelAttribute query 复杂对象，
+   * 需要将嵌套对象展开为 `pageNum=1&pageSize=20` 而非 `query[pageNum]=1`
+   * 自定义 paramsSerializer 把 { pageNum: 1, pageSize: 20 } 展开为平铺 query
+   */
+  paramsSerializer: {
+    serialize: (params: Record<string, unknown> | undefined): string => {
+      if (!params) return ''
+      const parts: string[] = []
+      const append = (k: string, v: unknown): void => {
+        if (v == null) return
+        if (Array.isArray(v)) {
+          v.forEach((item) => append(k, item))
+        } else if (typeof v === 'object') {
+          Object.entries(v as Record<string, unknown>).forEach(([sk, sv]) => append(sk, sv))
+        } else {
+          parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+        }
+      }
+      Object.entries(params).forEach(([k, v]) => append(k, v))
+      return parts.join('&')
+    },
+  },
 })
 
-/** 请求拦截器 */
+/** 是否正在刷新（避免并发 1101 触发多次刷新） */
+let refreshing: Promise<string> | null = null
+
+/**
+ * 刷新 AccessToken（带去重）
+ * 任意时刻只有一个真正的请求
+ */
+function doRefresh(): Promise<string> {
+  if (refreshing) return refreshing
+  const rt = storage.getString(REFRESH_TOKEN_KEY)
+  if (!rt) {
+    return Promise.reject(new ApiError(BusinessCode.REFRESH_TOKEN_INVALID, '未登录'))
+  }
+  refreshing = refreshTokenApi({ refreshToken: rt })
+    .then((vo) => {
+      if (tokenRefreshedHandler) {
+        tokenRefreshedHandler(vo.accessToken, vo.refreshToken)
+      } else {
+        storage.setString(TOKEN_KEY, vo.accessToken)
+        storage.setString(REFRESH_TOKEN_KEY, vo.refreshToken)
+      }
+      return vo.accessToken
+    })
+    .finally(() => {
+      refreshing = null
+    })
+  return refreshing
+}
+
+/** 请求拦截器：自动加 token */
 instance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    NProgress.start()
-    const token = storage.getString(TOKEN_KEY)
-    if (token && config.headers) {
-      config.headers.set('Authorization', `Bearer ${token}`)
+    const ext = config as ExtendedAxiosRequestConfig
+    if (config.headers && !config.headers.has('Authorization')) {
+      const token = storage.getString(TOKEN_KEY)
+      if (token) {
+        config.headers.set('Authorization', `Bearer ${token}`)
+      }
     }
+    if (!config.headers?.has('Content-Type') && !(config.data instanceof FormData)) {
+      config.headers?.set('Content-Type', 'application/json;charset=UTF-8')
+    }
+    if (ext.showProgress !== false) NProgress.start()
     return config
   },
   (error) => {
@@ -61,31 +134,111 @@ instance.interceptors.request.use(
   }
 )
 
-/** 响应拦截器 */
+/** 响应拦截器：解包 R<T>、自动刷新、统一错误处理 */
 instance.interceptors.response.use(
-  (response: AxiosResponse) => {
+  async (response: AxiosResponse) => {
     NProgress.done()
     const res = response.data
-    if (res == null) {
-      return response
+    if (res == null) return response
+
+    // 非标准响应（mock/raw 等），直接透传
+    if (typeof res !== 'object' || !('code' in res)) {
+      return res
     }
-    if (typeof res === 'object' && 'code' in res) {
-      const { code, msg, data } = res as { code: number; msg: string; data: unknown }
-      if (code === BusinessCode.SUCCESS) {
-        return data
-      }
-      if (code === BusinessCode.UNAUTHORIZED) {
-        handleUnauthorized(msg)
-        return Promise.reject(new ApiError(code, msg || '未登录或登录已过期'))
-      }
-      if (code === BusinessCode.FORBIDDEN) {
-        ElMessage.error(msg || '无访问权限')
-        return Promise.reject(new ApiError(code, msg || '无访问权限', data))
-      }
-      ElMessage.error(msg || '请求失败')
-      return Promise.reject(new ApiError(code, msg || '请求失败', data))
+
+    const { code, msg, data } = res as {
+      code: number
+      msg: string
+      data: unknown
     }
-    return res
+
+    // 业务成功：解包 data
+    if (code === BusinessCode.SUCCESS) {
+      return data
+    }
+
+    const config = response.config as InternalAxiosRequestConfig & { _retry?: boolean }
+
+    // 1101 = AccessToken 过期/无效 → 尝试 refresh + 重发
+    if (
+      code === BusinessCode.TOKEN_INVALID &&
+      !config._retry &&
+      !config.url?.includes('/auth/refresh') &&
+      !config.url?.includes('/auth/login')
+    ) {
+      config._retry = true
+      try {
+        const newToken = await doRefresh()
+        if (config.headers) {
+          config.headers.set('Authorization', `Bearer ${newToken}`)
+        }
+        return instance.request(config)
+      } catch {
+        // refresh 失败 → 交给 1102 路径处理
+        handleUnauthorized('登录已过期，请重新登录')
+        return Promise.reject(new ApiError(BusinessCode.REFRESH_TOKEN_INVALID, '登录已过期'))
+      }
+    }
+
+    // 1102 / 1103 = RefreshToken 失效或缺失 → 强制登出
+    if (code === BusinessCode.REFRESH_TOKEN_INVALID || code === BusinessCode.TOKEN_MISSING) {
+      handleUnauthorized(msg)
+      return Promise.reject(new ApiError(code, msg || '请重新登录'))
+    }
+
+    // 1104 = 无权限
+    if (code === BusinessCode.FORBIDDEN) {
+      ElMessage.error(msg || '无访问权限')
+      return Promise.reject(new ApiError(code, msg || '无访问权限', data))
+    }
+
+    // 1002 = 验证码错误（仅登录页需要，向上抛）
+    if (code === BusinessCode.CAPTCHA_INVALID) {
+      return Promise.reject(new ApiError(code, msg || '验证码错误', data))
+    }
+
+    // 1005 = 用户名已存在（仅注册页需要，向上抛）
+    if (code === BusinessCode.USERNAME_EXISTS) {
+      return Promise.reject(new ApiError(code, msg || '用户名已被占用', data))
+    }
+
+    // 2001 = 样本不存在
+    if (code === BusinessCode.SAMPLE_NOT_FOUND) {
+      return Promise.reject(new ApiError(code, msg || '样本不存在', data))
+    }
+
+    // 3001 / 2005 = 参数/类型错误
+    if (code === BusinessCode.PARAM_INVALID || code === BusinessCode.FILE_TYPE_INVALID) {
+      ElMessage.error(msg || '参数错误')
+      return Promise.reject(new ApiError(code, msg || '参数错误', data))
+    }
+
+    // 4001 = 频率超限
+    if (code === BusinessCode.RATE_LIMIT) {
+      ElMessage.warning(msg || '操作过于频繁，请稍后重试')
+      return Promise.reject(new ApiError(code, msg || '操作过于频繁', data))
+    }
+
+    // 5000 / 5100 / 5200 / 5300 = 系统异常
+    if (
+      code === BusinessCode.INTERNAL_ERROR ||
+      code === BusinessCode.DB_ERROR ||
+      code === BusinessCode.REDIS_ERROR ||
+      code === BusinessCode.CONFIG_ERROR
+    ) {
+      ElMessage.error(msg || '服务异常，请稍后重试')
+      return Promise.reject(new ApiError(code, msg || '服务异常', data))
+    }
+
+    // 2004 = 文件过大
+    if (code === BusinessCode.FILE_TOO_LARGE) {
+      ElMessage.error(msg || '文件过大，请压缩后再传')
+      return Promise.reject(new ApiError(code, msg || '文件过大', data))
+    }
+
+    // 其他业务错误
+    ElMessage.error(msg || '请求失败')
+    return Promise.reject(new ApiError(code, msg || '请求失败', data))
   },
   (error) => {
     NProgress.done()
@@ -96,6 +249,8 @@ instance.interceptors.response.use(
         handleUnauthorized(msg)
       } else if (status === 403) {
         ElMessage.error('无访问权限')
+      } else if (status === 404) {
+        ElMessage.error(msg || '资源不存在')
       } else if (status >= 500) {
         ElMessage.error('服务异常，请稍后重试')
       } else {
@@ -115,6 +270,7 @@ instance.interceptors.response.use(
 let unauthorizedPrompted = false
 function handleUnauthorized(msg?: string): void {
   storage.remove(TOKEN_KEY)
+  storage.remove(REFRESH_TOKEN_KEY)
   if (unauthorizedHandler) {
     unauthorizedHandler()
     return
@@ -126,6 +282,9 @@ function handleUnauthorized(msg?: string): void {
     type: 'warning',
   })
     .then(() => {
+      window.location.href = '/login'
+    })
+    .catch(() => {
       window.location.href = '/login'
     })
     .finally(() => {
@@ -163,14 +322,18 @@ export const request = {
   patch<T = unknown>(url: string, data?: unknown, _options?: RequestOptions): Promise<T> {
     return instance.patch(url, data) as unknown as Promise<T>
   },
+  /**
+   * 文件上传（multipart/form-data）
+   * - Content-Type 由浏览器自动设置（boundary）
+   * - 上传进度通过 onUploadProgress 回调
+   */
   upload<T = unknown>(
     url: string,
     formData: FormData,
     onProgress?: (percent: number) => void,
-    options?: RequestOptions
+    _options?: RequestOptions
   ): Promise<T> {
     return instance.post(url, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (e) => {
         if (onProgress && e.total) {
           onProgress(Math.round((e.loaded * 100) / e.total))

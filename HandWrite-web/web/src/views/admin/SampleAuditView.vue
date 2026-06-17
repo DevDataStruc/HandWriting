@@ -28,32 +28,34 @@
         <el-table-column label="样本" width="120">
           <template #default="{ row }">
             <div class="image-cell">
-              <img v-if="row.imageUrl" :src="row.imageUrl" />
-              <span v-else>{{ row.char || '?' }}</span>
+              <img v-if="displayUrl(row as SampleVO)" :src="displayUrl(row as SampleVO)" />
+              <span v-else>{{ (row as SampleVO).char || (row as SampleVO).charId || '?' }}</span>
             </div>
           </template>
         </el-table-column>
         <el-table-column label="字符" prop="char" width="80" />
-        <el-table-column label="提交人" width="120" prop="username" />
+        <el-table-column label="提交人" width="120">
+          <template #default="{ row }">@{{ (row as SampleVO).userId }}</template>
+        </el-table-column>
         <el-table-column label="状态" width="100">
-          <template #default="{ row }">
+          <template #default>
             <el-tag type="warning" size="small">待审核</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="笔画" prop="strokeCount" width="80" />
         <el-table-column label="用时" width="100">
-          <template #default="{ row }">{{ formatDuration(row.duration) }}</template>
+          <template #default="{ row }">{{ formatDuration((row as SampleVO).duration) }}</template>
         </el-table-column>
         <el-table-column label="提交时间" width="170">
-          <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+          <template #default="{ row }">{{ formatDate((row as SampleVO).createTime) }}</template>
         </el-table-column>
         <el-table-column label="备注" prop="remark" min-width="160" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <AuditActionBar
               require-reason
-              @approve="onApprove(row)"
-              @reject="(r) => onReject(row, r)"
+              @approve="onApprove(row as SampleVO)"
+              @reject="(r) => onReject(row as SampleVO, r)"
             />
           </template>
         </el-table-column>
@@ -81,17 +83,20 @@ import BaseCard from '@/components/base/BaseCard.vue'
 import AuditActionBar from '@/components/business/AuditActionBar.vue'
 import { useAuditStore } from '@/stores/audit'
 import { formatDate, formatDuration } from '@/utils/format'
-import type { Sample } from '@/api/contracts/sample'
+import type { SampleVO } from '@/api/contracts/sample'
 
 const auditStore = useAuditStore()
-const selection = ref<Sample[]>([])
+const selection = ref<SampleVO[]>([])
 
 const query = reactive({
   keyword: '',
-  status: 'PENDING' as const,
 })
 
-function onSelection(rows: Sample[]) {
+function displayUrl(row: SampleVO): string {
+  return row.thumbUrl || row.fileUrl || row.imageUrl || ''
+}
+
+function onSelection(rows: SampleVO[]) {
   selection.value = rows
 }
 
@@ -103,22 +108,22 @@ async function onSearch() {
   })
 }
 
-async function onApprove(row: Sample) {
+async function onApprove(row: SampleVO) {
   try {
-    await auditStore.approve(row.id)
+    await auditStore.approve(row.id as number)
     ElMessage.success('已通过')
   } catch (err) {
     console.warn('approve error', err)
   }
 }
 
-async function onReject(row: Sample, reason: string) {
+async function onReject(row: SampleVO, reason: string) {
   if (!reason) {
     ElMessage.warning('请填写驳回原因')
     return
   }
   try {
-    await auditStore.reject(row.id, reason)
+    await auditStore.reject(row.id as number, { reason })
     ElMessage.success('已驳回')
   } catch (err) {
     console.warn('reject error', err)
@@ -140,11 +145,8 @@ async function onBatch(action: 'APPROVED' | 'REJECTED') {
       })
       reason = value || ''
     }
-    const res = await auditStore.batchAudit({
-      ids: selection.value.map((s) => s.id),
-      action,
-      reason,
-    })
+    const ids = selection.value.map((s) => s.id as number)
+    const res = await auditStore.batchAudit(ids, action, reason)
     ElMessage.success(`已处理 ${res.successCount} 个，失败 ${res.failedCount} 个`)
   } catch {
     /* cancel */

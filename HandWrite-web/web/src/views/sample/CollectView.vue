@@ -59,7 +59,7 @@ import { useSampleStore } from '@/stores/sample'
 import { useI18n } from 'vue-i18n'
 import { storage } from '@/utils/storage'
 import { DEFAULT_CHAR_FONT_ID } from '@/utils/charFonts'
-import type { DictChar, Sample } from '@/api/contracts/sample'
+import type { CharDict } from '@/api/contracts/sample'
 
 const { t } = useI18n()
 const dictStore = useDictStore()
@@ -67,7 +67,7 @@ const sampleStore = useSampleStore()
 const route = useRoute()
 
 const padRef = ref<InstanceType<typeof HandwritingPad> | null>(null)
-const currentChar = ref<DictChar | null>(dictStore.currentChar)
+const currentChar = ref<CharDict | null>(dictStore.currentChar)
 const artworkTitle = ref('')
 const strokeCount = ref(0)
 const uploading = ref(false)
@@ -134,7 +134,7 @@ function onTitleChange(title: string) {
 /**
  * 板内"存稿"按钮触发：与提交样本走同一上传流程
  * - 正常：调用 sampleStore.upload
- * - 失败：本地持久化到 sessionStorage（草稿箱），刷新后可恢复
+ * - 失败：本地持久化到 storage（草稿箱），刷新后可恢复
  */
 async function onPadSave(payload: {
   blob: Blob
@@ -161,50 +161,17 @@ async function onPadSave(payload: {
     refreshChar()
   } catch (err) {
     // 兜底：本地草稿持久化，确保刷新/重开不丢
-    const draft = persistDraftLocally(payload, currentChar.value)
-    sampleStore.addLocalDraft(draft)
+    sampleStore.persistDraft(currentChar.value.id, payload.blob, payload.dataUrl, {
+      strokeCount: payload.strokeCount,
+      duration: payload.durationMs,
+      remark: payload.title,
+    })
     console.warn('save error, persisted as local draft', err)
     ElMessage.warning('服务器暂不可用，已保存到本地草稿箱')
     onClear()
   } finally {
     uploading.value = false
   }
-}
-
-interface LocalDraft {
-  id: string
-  charId: number | string
-  char?: string
-  imageUrl: string
-  status: 'PENDING'
-  strokeCount: number
-  duration: number
-  remark: string
-  createdAt: string
-  local: true
-}
-
-function persistDraftLocally(
-  payload: { blob: Blob; dataUrl: string; strokeCount: number; durationMs: number; title: string },
-  char: DictChar
-): Sample {
-  const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-  const draft: LocalDraft = {
-    id,
-    charId: char.id,
-    char: char.char,
-    imageUrl: payload.dataUrl,
-    status: 'PENDING',
-    strokeCount: payload.strokeCount,
-    duration: payload.durationMs,
-    remark: payload.title,
-    createdAt: new Date().toISOString(),
-    local: true,
-  }
-  const list = storage.get<LocalDraft[]>('local-drafts', []) ?? []
-  list.unshift(draft)
-  storage.set('local-drafts', list.slice(0, 200)) // 防止无限增长
-  return draft
 }
 
 onMounted(async () => {

@@ -11,6 +11,7 @@ export interface UseUploadOptions {
 
 /**
  * 通用上传 composable，支持进度与重试
+ * - direct = true：走 fileApi.directUpload（签名 → 直传对象存储）
  */
 export function useUpload(options: UseUploadOptions = {}) {
   const accept = options.accept ?? ALLOWED_IMAGE_TYPES
@@ -41,15 +42,7 @@ export function useUpload(options: UseUploadOptions = {}) {
     uploading.value = true
     progress.value = 0
     try {
-      if (options.direct) {
-        return await fileApi.directUpload(file, (p) => (progress.value = p))
-      }
-      // 简单走通用后端上传：使用 fetch（progress 简化处理）
-      await new Promise<void>((resolve) => {
-        progress.value = 30
-        setTimeout(resolve, 200)
-      })
-      const res = await fileApi.directUpload(file, (p) => (progress.value = p))
+      const res = await fileApi.directUpload(file, (p: number) => (progress.value = p))
       return { url: res.url, key: res.key }
     } catch (err) {
       if (retry > 0) {

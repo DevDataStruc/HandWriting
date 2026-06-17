@@ -27,12 +27,12 @@
         </template>
         <div class="detail-grid">
           <div class="image-box" @click="onImagePreview">
-            <img v-if="sample.imageUrl" :src="sample.imageUrl" :alt="sample.char" />
-            <span v-else class="placeholder">{{ sample.char }}</span>
+            <img v-if="displayImage" :src="displayImage" :alt="displayChar" />
+            <span v-else class="placeholder">{{ displayChar || '?' }}</span>
           </div>
           <el-descriptions :column="1" border class="info-table">
             <el-descriptions-item :label="t('samples.char')">
-              {{ sample.char || sample.charId }}
+              {{ displayChar || sample.charId }}
             </el-descriptions-item>
             <el-descriptions-item :label="t('samples.status')">
               <el-tag :type="statusType(sample.status)" effect="light">
@@ -46,13 +46,13 @@
               {{ formatDuration(sample.duration) }}
             </el-descriptions-item>
             <el-descriptions-item :label="t('samples.device')">
-              {{ sample.deviceInfo || '-' }}
+              {{ sample.device || '-' }}
             </el-descriptions-item>
             <el-descriptions-item :label="t('samples.submittedAt')">
-              {{ formatDate(sample.createdAt) }}
+              {{ formatDate(sample.createTime) }}
             </el-descriptions-item>
-            <el-descriptions-item v-if="sample.reviewedAt" :label="t('samples.reviewedAt')">
-              {{ formatDate(sample.reviewedAt) }}
+            <el-descriptions-item v-if="sample.auditedTime" :label="t('samples.reviewedAt')">
+              {{ formatDate(sample.auditedTime) }}
             </el-descriptions-item>
             <el-descriptions-item v-if="sample.rejectReason" :label="t('samples.rejectReason')">
               <span class="reject-reason">{{ sample.rejectReason }}</span>
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElImageViewer, ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
@@ -96,31 +96,38 @@ import {
   pngUrlToSvgString,
   triggerDownload,
 } from '@/utils/download'
-import type { Sample, SampleStatus } from '@/api/contracts/sample'
+import type { SampleVO } from '@/api/contracts/sample'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const sampleStore = useSampleStore()
-const sample = ref<Sample | null>(null)
+const sample = ref<SampleVO | null>(null)
 const loading = ref(false)
 const previewVisible = ref(false)
 const previewList = ref<string[]>([])
 
-function statusType(s: SampleStatus) {
-  return s === 'APPROVED' ? 'success' : s === 'REJECTED' ? 'danger' : 'warning'
+function statusType(s: number) {
+  return s === 1 ? 'success' : s === 2 ? 'danger' : 'warning'
 }
-function statusLabel(s: SampleStatus) {
-  return s === 'APPROVED'
-    ? t('samples.approved')
-    : s === 'REJECTED'
-      ? t('samples.rejected')
-      : t('samples.pending')
+function statusLabel(s: number) {
+  return s === 1 ? t('samples.approved') : s === 2 ? t('samples.rejected') : t('samples.pending')
 }
 
+const displayImage = computed(() => {
+  if (!sample.value) return ''
+  return sample.value.thumbUrl || sample.value.fileUrl || sample.value.imageUrl || ''
+})
+
+const displayChar = computed(() => {
+  if (!sample.value) return ''
+  return sample.value.char || ''
+})
+
 function onImagePreview() {
-  if (sample.value?.imageUrl) {
-    previewList.value = [sample.value.imageUrl]
+  const url = displayImage.value
+  if (url) {
+    previewList.value = [url]
     previewVisible.value = true
   }
 }
@@ -131,24 +138,25 @@ function onReCollect() {
 }
 
 async function onExport(cmd: 'png' | 'svg') {
-  if (!sample.value?.imageUrl) {
+  const url = displayImage.value
+  if (!url) {
     ElMessage.warning('该样本无可下载图像')
     return
   }
-  const base = `${sample.value.char || 'sample'}_${sample.value.id}`
+  const base = `${displayChar.value || 'sample'}_${sample.value?.id ?? 'unknown'}`
   try {
     if (cmd === 'png') {
-      const res = await fetch(sample.value.imageUrl, { mode: 'cors' })
+      const res = await fetch(url, { mode: 'cors' })
       const blob = await res.blob()
       await downloadBlob(blob, `${base}.png`)
     } else {
-      const svg = await pngUrlToSvgString(sample.value.imageUrl)
+      const svg = await pngUrlToSvgString(url)
       downloadSvgString(svg, `${base}.svg`)
     }
     ElMessage.success(`${t('samples.export')} ✓`)
   } catch (err) {
     console.warn('[detail export] fallback', err)
-    triggerDownload(sample.value.imageUrl, `${base}.${cmd}`)
+    triggerDownload(url, `${base}.${cmd}`)
   }
 }
 

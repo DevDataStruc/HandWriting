@@ -6,7 +6,7 @@ import { useUserStore } from '@/stores/user'
  * v-permission="['ADMIN']" 或 v-permission="'ADMIN'"
  * 元素不满足权限时从 DOM 移除
  */
-function check(roles: Role[] | undefined | null, value: unknown): boolean {
+function check(value: unknown): boolean {
   if (value == null) return true
   const userStore = useUserStore()
   const list = (Array.isArray(value) ? value : [value]) as (Role | string)[]
@@ -14,7 +14,7 @@ function check(roles: Role[] | undefined | null, value: unknown): boolean {
 }
 
 function update(el: HTMLElement, binding: DirectiveBinding<unknown>) {
-  const ok = check(useUserStore().roles, binding.value)
+  const ok = check(binding.value)
   if (!ok) {
     el.parentNode?.removeChild(el)
   }

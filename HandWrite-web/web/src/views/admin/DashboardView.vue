@@ -52,8 +52,8 @@ import {
   fetchTopContributors,
 } from '@/api/stats'
 import type {
-  SampleTrend,
-  StatsOverview,
+  SampleTrendVO,
+  StatsOverviewVO,
   StatusDistribution,
   TopContributor,
 } from '@/api/contracts/stats'
@@ -71,7 +71,13 @@ use([
 ])
 
 const statsCards = ref<
-  { label: string; value: number; icon: string; variant: string; trend: number }[]
+  {
+    label: string
+    value: number
+    icon: string
+    variant: 'primary' | 'success' | 'warning' | 'danger' | 'default'
+    trend: number
+  }[]
 >([])
 
 const trendOption = ref<Record<string, unknown>>({})
@@ -95,7 +101,7 @@ async function loadAll() {
   }
 }
 
-function bindOverview(d: StatsOverview) {
+function bindOverview(d: StatsOverviewVO) {
   statsCards.value = [
     {
       label: '累计样本',
@@ -110,7 +116,7 @@ function bindOverview(d: StatsOverview) {
   ]
 }
 
-function bindTrend(d: SampleTrend) {
+function bindTrend(d: SampleTrendVO) {
   trendOption.value = {
     tooltip: { trigger: 'axis' },
     legend: { data: ['样本数', '用户数'], textStyle: { color: '#E2E8F0' } },

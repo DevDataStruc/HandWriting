@@ -28,7 +28,7 @@ import {
 import VChart from 'vue-echarts'
 import BaseCard from '@/components/base/BaseCard.vue'
 import { fetchSampleTrend, fetchStatusDistribution, fetchDictProgress } from '@/api/stats'
-import type { DictProgress, SampleTrend, StatusDistribution } from '@/api/contracts/stats'
+import type { DictProgress, SampleTrendVO, StatusDistribution } from '@/api/contracts/stats'
 
 use([
   CanvasRenderer,
@@ -60,7 +60,7 @@ async function loadAll() {
   }
 }
 
-function bindLine(d: SampleTrend) {
+function bindLine(d: SampleTrendVO) {
   lineOption.value = {
     tooltip: { trigger: 'axis' },
     legend: { data: ['样本数', '用户数'], textStyle: { color: '#E2E8F0' } },
