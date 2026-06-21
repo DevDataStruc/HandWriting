@@ -43,6 +43,7 @@ import {
   DataZoomComponent,
 } from 'echarts/components'
 import VChart from 'vue-echarts'
+import { ElMessage } from 'element-plus'
 import BaseCard from '@/components/base/BaseCard.vue'
 import StatsCard from '@/components/business/StatsCard.vue'
 import {
@@ -70,35 +71,76 @@ use([
   DataZoomComponent,
 ])
 
-const statsCards = ref<
-  {
-    label: string
-    value: number
-    icon: string
-    variant: 'primary' | 'success' | 'warning' | 'danger' | 'default'
-    trend: number
-  }[]
->([])
+/**
+ * 与后端 DashboardController 一一对应：
+ *  - GET /v1/stats/overview              -> StatsOverviewVO
+ *  - GET /v1/stats/trend?days=30         -> SampleTrendVO
+ *  - GET /v1/stats/status-distribution   -> StatusDistribution[]
+ *  - GET /v1/stats/top-contributors?limit=10 -> TopContributor[]
+ *
+ * 字段映射（后端 VO -> 前端展示）：
+ *  totalSamples  -> 累计样本
+ *  totalUsers    -> 注册用户
+ *  pendingAudits -> 待审核
+ *  todaySamples  -> 今日新增
+ *  growthRate    -> 较昨日增长率（百分比）
+ */
+interface StatCard {
+  label: string
+  value: number
+  icon: string
+  variant: 'primary' | 'success' | 'warning' | 'danger' | 'default'
+  trend: number
+}
 
+const statsCards = ref<StatCard[]>([])
 const trendOption = ref<Record<string, unknown>>({})
 const statusOption = ref<Record<string, unknown>>({})
 const contributorOption = ref<Record<string, unknown>>({})
 
+const loading = ref(false)
+const loadedAt = ref<string>('')
+
 async function loadAll() {
-  try {
-    const [overview, trend, status, contributors] = await Promise.all([
-      fetchOverview(),
-      fetchSampleTrend(30),
-      fetchStatusDistribution(),
-      fetchTopContributors(10),
-    ])
-    bindOverview(overview)
-    bindTrend(trend)
-    bindStatus(status)
-    bindContributors(contributors)
-  } catch (err) {
-    console.warn('dashboard load error', err)
+  loading.value = true
+  // allSettled：单个接口失败不影响其他数据加载
+  const [overviewRes, trendRes, statusRes, contributorRes] = await Promise.allSettled([
+    fetchOverview(),
+    fetchSampleTrend(30),
+    fetchStatusDistribution(),
+    fetchTopContributors(10),
+  ])
+
+  if (overviewRes.status === 'fulfilled') {
+    bindOverview(overviewRes.value)
+  } else {
+    console.error('[Dashboard] overview 加载失败', overviewRes.reason)
   }
+  if (trendRes.status === 'fulfilled') {
+    bindTrend(trendRes.value)
+  } else {
+    console.error('[Dashboard] trend 加载失败', trendRes.reason)
+  }
+  if (statusRes.status === 'fulfilled') {
+    bindStatus(statusRes.value)
+  } else {
+    console.error('[Dashboard] status 加载失败', statusRes.reason)
+  }
+  if (contributorRes.status === 'fulfilled') {
+    bindContributors(contributorRes.value)
+  } else {
+    console.error('[Dashboard] contributors 加载失败', contributorRes.reason)
+  }
+
+  const failed = [overviewRes, trendRes, statusRes, contributorRes].filter(
+    (r) => r.status === 'rejected'
+  ).length
+  const ok = 4 - failed
+  if (failed > 0) {
+    ElMessage.warning(`控制台数据加载 ${ok}/4 成功，${failed} 项失败`)
+  }
+  loadedAt.value = new Date().toLocaleTimeString()
+  loading.value = false
 }
 
 function bindOverview(d: StatsOverviewVO) {
@@ -110,9 +152,27 @@ function bindOverview(d: StatsOverviewVO) {
       variant: 'primary',
       trend: d.growthRate ?? 0,
     },
-    { label: '注册用户', value: d.totalUsers, icon: 'User', variant: 'success', trend: 0 },
-    { label: '待审核', value: d.pendingAudits, icon: 'Bell', variant: 'warning', trend: 0 },
-    { label: '今日新增', value: d.todaySamples, icon: 'TrendCharts', variant: 'default', trend: 0 },
+    {
+      label: '注册用户',
+      value: d.totalUsers ?? 0,
+      icon: 'User',
+      variant: 'success',
+      trend: 0,
+    },
+    {
+      label: '待审核',
+      value: d.pendingAudits ?? 0,
+      icon: 'Bell',
+      variant: 'warning',
+      trend: 0,
+    },
+    {
+      label: '今日新增',
+      value: d.todaySamples ?? 0,
+      icon: 'TrendCharts',
+      variant: 'default',
+      trend: 0,
+    },
   ]
 }
 
@@ -123,7 +183,7 @@ function bindTrend(d: SampleTrendVO) {
     grid: { left: 40, right: 20, top: 40, bottom: 30 },
     xAxis: {
       type: 'category',
-      data: d.dates,
+      data: d.dates ?? [],
       axisLine: { lineStyle: { color: '#334155' } },
       axisLabel: { color: '#94A3B8' },
     },
@@ -138,7 +198,7 @@ function bindTrend(d: SampleTrendVO) {
         name: '样本数',
         type: 'line',
         smooth: true,
-        data: d.samples,
+        data: d.samples ?? [],
         itemStyle: { color: '#22C55E' },
         areaStyle: {
           color: {
@@ -158,7 +218,7 @@ function bindTrend(d: SampleTrendVO) {
         name: '用户数',
         type: 'line',
         smooth: true,
-        data: d.users,
+        data: d.users ?? [],
         itemStyle: { color: '#38BDF8' },
       },
     ],
@@ -186,6 +246,7 @@ function bindStatus(d: StatusDistribution[]) {
 }
 
 function bindContributors(d: TopContributor[]) {
+  // 横向条形图：sampleCount 从小到大（ECharts yAxis category 渲染顺序自下而上）
   const sorted = [...d].sort((a, b) => a.sampleCount - b.sampleCount)
   contributorOption.value = {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -198,7 +259,7 @@ function bindContributors(d: TopContributor[]) {
     },
     yAxis: {
       type: 'category',
-      data: sorted.map((c) => c.nickname || c.username),
+      data: sorted.map((c) => c.nickname || c.username || `user#${c.userId}`),
       axisLine: { lineStyle: { color: '#334155' } },
       axisLabel: { color: '#E2E8F0' },
     },

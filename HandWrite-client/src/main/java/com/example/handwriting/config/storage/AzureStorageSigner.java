@@ -5,6 +5,7 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import com.azure.storage.common.Utility;
 import com.example.handwriting.common.exception.BizException;
 import com.example.handwriting.common.result.ErrorCode;
 import com.example.handwriting.config.AppProperties;
@@ -19,8 +20,10 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Azure Blob Storage 直传签名实现
@@ -77,15 +80,26 @@ public class AzureStorageSigner implements StorageSigner {
                             .setStartTime(OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(1));
 
             String sasToken = blobClient.generateSas(sasValues);
-            String uploadUrl = blobClient.getBlobUrl() + "?" + sasToken;
 
-            log.info("[Azure] 生成上传签名 container={} blob={} 过期={}s",
-                    container, blobName, expire);
+            // BlobClient.getBlobUrl() 会用 URLEncoder 编码整段 blobName，
+            // 导致路径分隔符 '/' 变成 '%2F'，与 SAS 签名时的 canonical resource 不一致，
+            // 浏览器直传时触发 AuthorizationPermissionMismatch。
+            // 因此手动拼装 URL：只对每个路径段编码，段之间保留 '/'。
+            String baseUrl = blobServiceClient.getAccountUrl().replaceAll("/$", "");
+            String encodedBlobName = Arrays.stream(blobName.split("/"))
+                    .map(Utility::urlEncode)
+                    .collect(Collectors.joining("/"));
+            String accessUrl = baseUrl + "/" + Utility.urlEncode(container) + "/" + encodedBlobName;
+            String uploadUrl = accessUrl + "?" + sasToken;
+
+            log.info("[Azure] 生成上传签名 container={} blob={} accessUrl={} 过期={}s",
+                    container, blobName, accessUrl, expire);
 
             return FileSignVO.builder()
                     .bucket(container)   // Azure 中 bucket ≡ container
                     .objectKey(blobName)
                     .uploadUrl(uploadUrl)
+                    .accessUrl(accessUrl) // 不含 SAS，用于落库/展示
                     .method("PUT")
                     .expireSeconds(expire)
                     // 前端 PUT 时必须携带此头，否则 Azure 拒绝

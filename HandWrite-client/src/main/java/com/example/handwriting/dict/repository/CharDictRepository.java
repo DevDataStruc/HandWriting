@@ -12,4 +12,10 @@ public interface CharDictRepository extends JpaRepository<CharDict, Long> {
     Page<CharDict> findByCategoryAndEnabled(String category, Integer enabled, Pageable pageable);
 
     Page<CharDict> findByEnabled(Integer enabled, Pageable pageable);
+
+    boolean existsByCharValue(String charValue);
+
+    java.util.Optional<CharDict> findByCharValue(String charValue);
+
+    long countByEnabled(Integer enabled);
 }

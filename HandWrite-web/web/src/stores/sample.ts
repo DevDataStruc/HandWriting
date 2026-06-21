@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as sampleApi from '@/api/sample'
-import * as fileApi from '@/api/file'
 import type {
   LocalDraft,
   SamplePageQuery,
   SamplePageResult,
   SampleVO,
-  SampleUploadDTO,
 } from '@/api/contracts/sample'
 import { storage } from '@/utils/storage'
 
@@ -96,10 +94,10 @@ export const useSampleStore = defineStore('sample', () => {
   }
 
   /**
-   * 完整上传流程（API.md §8）：
-   *   1) POST /v1/file/sign 拿签名
-   *   2) PUT 直传到对象存储
-   *   3) POST /v1/sample/upload 落库
+   * 完整上传流程（改造后，本地存储单调用）：
+   *   1) POST /v1/sample/upload（multipart） 一次性把文件 + 元数据发给后端
+   *      - 后端将文件落到 storage/<userId>/<charId>/<timestamp>_<uuid>.<ext>
+   *      - 同字符可重复上传，每份文件对应一条 Sample 记录
    *
    * 失败兜底：把 blob 持久化到 localStorage，标记为 local-draft
    */
@@ -111,65 +109,70 @@ export const useSampleStore = defineStore('sample', () => {
     uploading.value = true
     uploadProgress.value = 0
     try {
-      // 1) 拿签名
-      const ext = (blob.type.split('/')[1] || 'png').toLowerCase()
-      const sign = await fileApi.getUploadSign({
-        purpose: 'SAMPLE_FILE',
-        ext,
-        bizId: charId,
-      })
-
-      // 2) PUT 直传
-      uploadProgress.value = 5
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.open(sign.method, sign.uploadUrl, true)
-        if (sign.requiredHeader) {
-          const [k, v] = sign.requiredHeader.split(':')
-          if (k && v) xhr.setRequestHeader(k.trim(), v.trim())
-        }
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            uploadProgress.value = Math.min(95, Math.round((e.loaded * 95) / e.total))
-          }
-        }
-        xhr.onload = () =>
-          xhr.status >= 200 && xhr.status < 300
-            ? resolve()
-            : reject(new Error(`HTTP ${xhr.status}`))
-        xhr.onerror = () => reject(new Error('network error'))
-        xhr.send(blob)
-      })
-
-      // 3) 落库
-      const dto: SampleUploadDTO = {
+      const device = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      const vo = await sampleApi.uploadSampleFile(
+        blob,
         charId,
-        fileKey: sign.objectKey,
-        fileUrl: sign.accessUrl,
-        fileSize: blob.size,
-        device: navigator.userAgent,
-      }
-      const vo = await sampleApi.uploadSample(dto)
+        device,
+        (p) => (uploadProgress.value = p)
+      )
       uploadProgress.value = 100
 
-      // 转换成前端 SampleVO
       const sample: SampleVO = {
         id: vo.id,
         userId: 0,
         charId: vo.charId,
-        fileKey: sign.objectKey,
+        fileKey: '',
         fileUrl: vo.fileUrl,
         fileSize: blob.size,
-        device: navigator.userAgent,
+        device,
         status: vo.status,
         createTime: vo.createTime,
         remark: meta?.remark,
       }
-      // 列表前端追加一条
       if (list.value.length >= pageSize.value) list.value.pop()
       list.value = [sample, ...list.value]
       total.value += 1
       return sample
+    } finally {
+      uploading.value = false
+      setTimeout(() => (uploadProgress.value = 0), 800)
+    }
+  }
+
+  /**
+   * 重新上传笔迹：multipart 单调用。
+   */
+  async function update(
+    id: number | string,
+    charId: number,
+    blob: Blob,
+    meta?: { duration?: number; strokeCount?: number; remark?: string }
+  ): Promise<SampleVO> {
+    uploading.value = true
+    uploadProgress.value = 0
+    try {
+      const updated = await sampleApi.updateSampleFile(
+        id,
+        blob,
+        charId,
+        (p) => (uploadProgress.value = p)
+      )
+      uploadProgress.value = 100
+
+      const idx = list.value.findIndex((s) => String(s.id) === String(id))
+      const next: SampleVO = {
+        ...updated,
+        duration: meta?.duration,
+        strokeCount: meta?.strokeCount,
+        remark: meta?.remark,
+      }
+      if (idx >= 0) {
+        list.value[idx] = next
+      } else if (currentDetail.value && String(currentDetail.value.id) === String(id)) {
+        currentDetail.value = next
+      }
+      return next
     } finally {
       uploading.value = false
       setTimeout(() => (uploadProgress.value = 0), 800)
@@ -307,6 +310,7 @@ export const useSampleStore = defineStore('sample', () => {
     localDrafts,
     fetchPage,
     upload,
+    update,
     fetchDetail,
     remove,
     removeMany,

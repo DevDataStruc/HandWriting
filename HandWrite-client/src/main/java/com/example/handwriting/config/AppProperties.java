@@ -37,8 +37,8 @@ public class AppProperties {
 
     @Data
     public static class Storage {
-        /** minio / s3 / azure */
-        private String provider = "minio";
+        /** minio / s3 / azure / local */
+        private String provider = "local";
 
         // ---- 通用 ----
         /** 通用 Bucket/Container 名称（按 purpose 区分：采集/审核/备份） */
@@ -67,6 +67,21 @@ public class AppProperties {
         private String azureConnectionString;
         /** Azure 云环境：china（中国）/ global（国际）/ usgov（美国政府） */
         private String azureCloud = "china";
+
+        // ---- 本地文件系统（默认存储方式） ----
+        private Local local = new Local();
+
+        @Data
+        public static class Local {
+            /** 存储根目录（相对 JVM 工作目录或绝对路径）。默认 ./storage */
+            private String basePath = "./storage";
+            /** 对外访问前缀，前端拼成 {origin}{urlPrefix}/{userId}/{charId}/{filename} */
+            private String urlPrefix = "/v1/file/local";
+            /** 允许的扩展名（白名单） */
+            private java.util.Set<String> allowedExt = java.util.Set.of("png", "jpg", "jpeg", "svg", "webp");
+            /** 单文件大小上限（字节），默认 10MB */
+            private long maxFileSize = 10L * 1024 * 1024;
+        }
     }
 
     @Data

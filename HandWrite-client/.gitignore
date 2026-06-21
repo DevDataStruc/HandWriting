@@ -54,3 +54,8 @@
 *.orig
 *.rej
 .flattened-pom.xml
+
+# 用户上传文件（本地存储目录）
+/storage/
+**/storage/
+!/storage/.gitkeep

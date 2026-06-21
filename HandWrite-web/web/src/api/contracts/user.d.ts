@@ -44,3 +44,38 @@ export interface ChangePasswordRequest {
   newPassword: string
   confirmPassword: string
 }
+
+/**
+ * 管理员-用户档案（GET /v1/admin/users、PATCH /v1/admin/users/{id}/status）
+ * 字段与 HandWrite-client api2.md 中 AdminUserVO 对齐
+ */
+export interface AdminUserVO {
+  id: number
+  username: string
+  nickname: string
+  email: string
+  phone: string
+  avatar: string
+  /** 原始状态码（0 正常 / 1 禁用） */
+  status: number
+  /** 扩展状态：active / disabled（后端友好别名） */
+  statusExt: 'active' | 'disabled'
+  lastLoginTime: string
+  createTime: string
+  /** createTime 别名（后端冗余字段） */
+  createdAt?: string
+  /** 角色编码列表（USER / AUDITOR / ADMIN） */
+  roles: string[]
+  permissions: string[]
+  /** 该用户提交的样本数 */
+  sampleCount: number
+}
+
+/**
+ * 管理员-用户分页响应（GET /v1/admin/users）
+ * 注意：与 sample/audit 分页结构（PageResult）不一致，使用 list/total
+ */
+export interface AdminUserListResponse {
+  list: AdminUserVO[]
+  total: number
+}

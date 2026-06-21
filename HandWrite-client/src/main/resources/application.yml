@@ -22,9 +22,9 @@ spring:
 
   # ====== MySQL DataSource (env driven, with dev defaults) ======
   datasource:
-    url: jdbc:mysql://${HANDWRITE_DB_HOST:127.0.0.1}:${HANDWRITE_DB_PORT:3306}/${HANDWRITE_DB_NAME:handwriting}?useSSL=${HANDWRITE_DB_USE_SSL:false}&useUnicode=true&characterEncoding=utf8&serverTimezone=${HANDWRITE_DB_TIMEZONE:Asia/Shanghai}&allowPublicKeyRetrieval=true
-    username: ${HANDWRITE_DB_USERNAME:root}
-    password: ${HANDWRITE_DB_PASSWORD:123456}
+    url: jdbc:mysql://127.0.0.1:3306/handwrite?useSSL=true&useUnicode=true&characterEncoding=utf8&serverTimezone=${HANDWRITE_DB_TIMEZONE:Asia/Shanghai}&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: ${HANDWRITE_DB_POOL_MAX:20}
@@ -137,7 +137,7 @@ app:
     # Base64 编码后的 256 位密钥，可通过 openssl rand -base64 32 生成
     secret: ${HANDWRITE_JWT_SECRET:Y2hhbmdlLW1lLXRoaXMtaXMtYS1kZWZhdWx0LWp3dC1zZWNyZXQ=}
     issuer: ${HANDWRITE_JWT_ISSUER:handwriting-client}
-    access-token-ttl-seconds: ${HANDWRITE_JWT_ACCESS_TTL:900}
+    access-token-ttl-seconds: ${HANDWRITE_JWT_ACCESS_TTL:3600}
     refresh-token-ttl-seconds: ${HANDWRITE_JWT_REFRESH_TTL:604800}
     header: ${HANDWRITE_JWT_HEADER:Authorization}
     prefix: ${HANDWRITE_JWT_PREFIX:"Bearer "}
@@ -148,9 +148,9 @@ app:
     allowed-headers: "*"
     allow-credentials: true
     max-age: 3600
-  # --- Object Storage (MinIO / S3 / Azure Blob) ---
+  # --- Object Storage / Local Storage ---
   storage:
-    provider: ${HANDWRITE_STORAGE_PROVIDER:minio}              # minio | s3 | azure
+    provider: ${HANDWRITE_STORAGE_PROVIDER:local}              # local | minio | s3 | azure
     # 通用
     bucket-collect: ${HANDWRITE_STORAGE_BUCKET_COLLECT:handwriting-collect}
     bucket-audit: ${HANDWRITE_STORAGE_BUCKET_AUDIT:handwriting-audit}
@@ -168,6 +168,11 @@ app:
     azure-sas-token: ${HANDWRITE_AZURE_SAS_TOKEN:}
     azure-connection-string: ${HANDWRITE_AZURE_CONNECTION_STRING:}
     azure-cloud: ${HANDWRITE_AZURE_CLOUD:china}                # china | global | usgov
+    # 本地文件系统（provider=local 时使用，默认）
+    local:
+      base-path: ${HANDWRITE_STORAGE_LOCAL_BASE_PATH:./storage}    # 相对 JVM 工作目录
+      url-prefix: ${HANDWRITE_STORAGE_LOCAL_URL_PREFIX:/v1/file/local}
+      max-file-size: ${HANDWRITE_STORAGE_LOCAL_MAX_FILE_SIZE:10485760}  # 10MB
   # --- Rate Limit ---
   ratelimit:
     auth-per-minute: ${HANDWRITE_RATELIMIT_AUTH_PER_MIN:20}

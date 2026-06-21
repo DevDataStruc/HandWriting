@@ -76,9 +76,10 @@ export default defineConfig(({ mode }) => {
       open: true,
       proxy: {
         '/v1': {
-          target: env.VITE_PROXY_TARGET || 'http://localhost:8080',
+          target: 'http://localhost:8080',
           changeOrigin: true,
-          rewrite: (p) => p.replace(/^\/v1/, ''),
+          // 不再 rewrite：后端 Controller 实际路径是 /v1/auth/*、/v1/sample/* 等
+          // 之前用 rewrite 去掉 /v1 会导致后端 404，进而被 Security 兜底返回 1001
         },
       },
     },

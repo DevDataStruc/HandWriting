@@ -3,19 +3,16 @@ package com.example.handwriting.sample.controller;
 import com.example.handwriting.common.result.PageQuery;
 import com.example.handwriting.common.result.PageResult;
 import com.example.handwriting.common.result.R;
-import com.example.handwriting.sample.dto.SampleUploadDTO;
 import com.example.handwriting.sample.dto.SampleVO;
 import com.example.handwriting.sample.service.SampleService;
 import com.example.handwriting.security.LoginUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "手写体样本")
 @RestController
@@ -25,12 +22,14 @@ public class SampleController {
 
     private final SampleService sampleService;
 
-    @Operation(summary = "上传样本（提交元数据，文件已通过直传上传至对象存储）")
-    @PostMapping("/upload")
+    @Operation(summary = "上传样本（multipart，文件落地后端 storage/ 目录）")
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority('sample:upload') or hasRole('USER') or hasRole('ADMIN')")
     public R<SampleVO> upload(@AuthenticationPrincipal LoginUser loginUser,
-                              @RequestBody @Valid SampleUploadDTO dto) {
-        return R.ok(sampleService.upload(loginUser.getUserId(), dto));
+                              @RequestPart("file") MultipartFile file,
+                              @RequestParam("charId") Long charId,
+                              @RequestParam(value = "device", required = false) String device) {
+        return R.ok(sampleService.uploadWithFile(loginUser.getUserId(), charId, file, device));
     }
 
     @Operation(summary = "分页查询我的样本")
@@ -55,5 +54,15 @@ public class SampleController {
         boolean isAdmin = loginUser.getRoles() != null && loginUser.getRoles().contains("ADMIN");
         sampleService.delete(id, loginUser.getUserId(), isAdmin);
         return R.ok();
+    }
+
+    @Operation(summary = "更新样本（multipart 重新上传笔迹）")
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    @PreAuthorize("hasAuthority('sample:upload') or hasRole('USER') or hasRole('ADMIN')")
+    public R<SampleVO> update(@AuthenticationPrincipal LoginUser loginUser,
+                              @PathVariable Long id,
+                              @RequestPart("file") MultipartFile file,
+                              @RequestParam(value = "charId", required = false) Long charId) {
+        return R.ok(sampleService.updateWithFile(id, loginUser.getUserId(), file, charId));
     }
 }

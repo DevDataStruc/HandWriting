@@ -61,6 +61,8 @@ public class SecurityConfig {
                             "/actuator/info",
                             "/actuator/prometheus"
                     ).permitAll()
+                    // 本地存储文件访问：UUID 文件名自带安全，对外公开（与原对象存储行为一致）
+                    .requestMatchers(HttpMethod.GET, "/v1/file/local/**").permitAll()
                     .requestMatchers("/v1/admin/**").hasRole("ADMIN")
                     .requestMatchers("/v1/audit/**").hasAnyRole("AUDITOR", "ADMIN")
                     .anyRequest().authenticated()

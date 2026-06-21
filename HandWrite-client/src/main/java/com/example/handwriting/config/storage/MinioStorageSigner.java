@@ -53,6 +53,7 @@ public class MinioStorageSigner implements StorageSigner {
                     .bucket(bucket)
                     .objectKey(objectKey)
                     .uploadUrl(url)
+                    .accessUrl(url.split("\\?")[0])
                     .method("PUT")
                     .expireSeconds(expire)
                     .requiredHeader(null)

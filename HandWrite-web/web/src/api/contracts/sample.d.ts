@@ -111,6 +111,16 @@ export interface SampleUploadDTO {
   device?: string
 }
 
+/** 样本更新元数据（PUT /v1/sample/{id}） */
+export interface SampleUpdateDTO {
+  charId?: number
+  fileKey: string
+  fileUrl?: string
+  fileSize: number
+  sha256?: string
+  device?: string
+}
+
 /** 样本上传响应 */
 export interface SampleUploadVO {
   id: number

@@ -4,13 +4,19 @@ import com.azure.core.util.ClientOptions;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.models.BlobCorsRule;
+import com.azure.storage.blob.models.BlobServiceProperties;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.example.handwriting.common.exception.BizException;
 import com.example.handwriting.common.result.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Azure Blob Storage 客户端配置
@@ -89,6 +95,44 @@ public class AzureBlobConfig {
         } catch (Exception e) {
             throw new BizException(ErrorCode.CONFIG_ERROR,
                     "Azure Blob Storage 鉴权失败：必须配置 connection-string / sas-token / account-key 之一");
+        }
+    }
+
+    /**
+     * 应用启动后自动为 Azure Blob Storage 配置 CORS。
+     * 前端从浏览器直接 PUT 到 Azure 必须开启 CORS，否则浏览器会拦截跨域预检请求。
+     * 如果使用的凭据（如 SAS Token / DefaultAzureCredential）无服务属性修改权限，
+     * 会打印警告，需要手动在 Azure Portal 中配置 CORS。
+     */
+    @Bean
+    public ApplicationRunner azureBlobCorsConfigurer(BlobServiceClient blobServiceClient) {
+        return args -> configureCors(blobServiceClient);
+    }
+
+    private void configureCors(BlobServiceClient blobServiceClient) {
+        AppProperties.Cors cors = appProperties.getCors();
+        if (cors == null || cors.getAllowedOrigins() == null || cors.getAllowedOrigins().isBlank()) {
+            log.info("[Azure] 未配置 CORS 来源，跳过自动配置");
+            return;
+        }
+        try {
+            List<BlobCorsRule> rules = Arrays.stream(cors.getAllowedOrigins().split(","))
+                    .map(String::trim)
+                    .filter(origin -> !origin.isBlank())
+                    .map(origin -> new BlobCorsRule()
+                            .setAllowedOrigins(origin)
+                            .setAllowedMethods("PUT,POST,GET,DELETE,HEAD,OPTIONS")
+                            .setAllowedHeaders("*")
+                            .setExposedHeaders("*")
+                            .setMaxAgeInSeconds((int) cors.getMaxAge()))
+                    .toList();
+
+            BlobServiceProperties properties = blobServiceClient.getProperties();
+            properties.setCors(rules);
+            blobServiceClient.setProperties(properties);
+            log.info("[Azure] 已自动配置 Blob Storage CORS 规则，origins={}", cors.getAllowedOrigins());
+        } catch (Exception e) {
+            log.warn("[Azure] 自动配置 CORS 失败，请手动在 Azure Portal 中配置：{}", e.getMessage());
         }
     }
 

@@ -45,6 +45,24 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '公告中心', requiresAuth: false },
       },
       {
+        path: 'urls',
+        name: 'Urls',
+        component: () => import('@/views/portal/UrlsView.vue'),
+        meta: { title: 'URL 索引', requiresAuth: false, hideInMenu: true },
+      },
+      {
+        path: 'toast-test',
+        name: 'ToastTest',
+        component: () => import('@/views/test/ToastTestView.vue'),
+        meta: { title: 'Toast 测试', requiresAuth: false, hideInMenu: true },
+      },
+      {
+        path: 'components-test',
+        name: 'ComponentsTest',
+        component: () => import('@/views/test/ComponentsTestView.vue'),
+        meta: { title: '组件测试', requiresAuth: false, hideInMenu: true },
+      },
+      {
         path: 'sample/collect',
         name: 'Collect',
         component: () => import('@/views/sample/CollectView.vue'),
@@ -53,8 +71,8 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'sample/my',
         name: 'MySamples',
-        component: () => import('@/views/sample/MySamplesView.vue'),
-        meta: { title: '我的样本', requiresAuth: true, roles: ALL_ROLES },
+        component: () => import('@/views/sample/ArtGalleryView.vue'),
+        meta: { title: '我的样本', requiresAuth: false, roles: ALL_ROLES },
       },
       {
         path: 'sample/:id',
@@ -67,7 +85,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin',
-    component: () => import('@/layouts/AdminLayout.vue'),
+  component: () => import('@/layouts/AdminLayout.vue'),
     meta: { layout: 'admin', requiresAuth: true, roles: STAFF_ROLES },
     children: [
       {

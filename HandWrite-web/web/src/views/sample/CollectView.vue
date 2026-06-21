@@ -4,7 +4,7 @@
       <BaseCard class="prompt-card">
         <template #header>
           <div class="prompt-card__header">
-            <span>请书写字符</span>
+            <span>{{ isEditMode ? '重新书写字符' : '请书写字符' }}</span>
             <button
               type="button"
               class="prompt-card__refresh"
@@ -48,8 +48,8 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import BaseCard from '@/components/base/BaseCard.vue'
 import HandwritingPad from '@/components/business/HandwritingPad.vue'
@@ -59,12 +59,13 @@ import { useSampleStore } from '@/stores/sample'
 import { useI18n } from 'vue-i18n'
 import { storage } from '@/utils/storage'
 import { DEFAULT_CHAR_FONT_ID } from '@/utils/charFonts'
-import type { CharDict } from '@/api/contracts/sample'
+import type { CharDict, SampleVO } from '@/api/contracts/sample'
 
 const { t } = useI18n()
 const dictStore = useDictStore()
 const sampleStore = useSampleStore()
 const route = useRoute()
+const router = useRouter()
 
 const padRef = ref<InstanceType<typeof HandwritingPad> | null>(null)
 const currentChar = ref<CharDict | null>(dictStore.currentChar)
@@ -75,7 +76,13 @@ const refreshing = ref(false)
 const startTime = ref<number>(0)
 const durationMs = ref(0)
 const fontId = ref<string>(storage.getString('hw:fontId') || DEFAULT_CHAR_FONT_ID)
+const editingSample = ref<SampleVO | null>(null)
 let timer: number | null = null
+
+const editId = computed<string>(() => (route.query.editId as string) || '')
+const isEditMode = computed<boolean>(
+  () => !!editId.value && !String(editId.value).startsWith('local-')
+)
 
 async function refreshChar() {
   if (refreshing.value) return
@@ -132,8 +139,9 @@ function onTitleChange(title: string) {
 }
 
 /**
- * 板内"存稿"按钮触发：与提交样本走同一上传流程
- * - 正常：调用 sampleStore.upload
+ * 板内"存稿"按钮触发：
+ * - 普通模式：调用 sampleStore.upload 新建样本
+ * - 编辑模式：调用 sampleStore.update 重新上传并更新原样本
  * - 失败：本地持久化到 storage（草稿箱），刷新后可恢复
  */
 async function onPadSave(payload: {
@@ -151,6 +159,17 @@ async function onPadSave(payload: {
   if (payload.strokeCount === 0) return
   uploading.value = true
   try {
+    if (isEditMode.value && editingSample.value) {
+      await sampleStore.update(editingSample.value.id, currentChar.value.id, payload.blob, {
+        duration: payload.durationMs,
+        strokeCount: payload.strokeCount,
+        remark: payload.title,
+      })
+      ElMessage.success('样本已更新')
+      router.replace({ name: 'MySamples' })
+      return
+    }
+
     await sampleStore.upload(currentChar.value.id, payload.blob, {
       duration: payload.durationMs,
       strokeCount: payload.strokeCount,
@@ -175,13 +194,33 @@ async function onPadSave(payload: {
 }
 
 onMounted(async () => {
-  // 支持 ?charId=xxx 直接定位到某字符（来自"我的样本"重新采集）
-  const charId = route.query.charId
-  if (charId) {
+  // 编辑模式：?editId=xxx&charId=xxx，加载原样本信息
+  if (isEditMode.value) {
     try {
-      currentChar.value = await dictStore.fetchById(String(charId))
-    } catch {
-      /* ignore */
+      const sample = await sampleStore.fetchDetail(editId.value)
+      editingSample.value = sample
+      artworkTitle.value = sample.remark || ''
+      padRef.value?.setArtworkTitle(artworkTitle.value)
+      const charId = route.query.charId ?? sample.charId
+      if (charId) {
+        currentChar.value = await dictStore.fetchById(String(charId))
+      }
+    } catch (err) {
+      console.warn('load editing sample failed', err)
+      ElMessage.warning('样本加载失败，将按普通采集模式')
+      editingSample.value = null
+    }
+  }
+
+  // 支持 ?charId=xxx 直接定位到某字符（来自"我的样本"重新采集）
+  if (!currentChar.value) {
+    const charId = route.query.charId
+    if (charId) {
+      try {
+        currentChar.value = await dictStore.fetchById(String(charId))
+      } catch {
+        /* ignore */
+      }
     }
   }
   if (!currentChar.value) {

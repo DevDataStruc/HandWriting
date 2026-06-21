@@ -3,7 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import { storage } from './storage'
@@ -122,7 +122,12 @@ instance.interceptors.request.use(
         config.headers.set('Authorization', `Bearer ${token}`)
       }
     }
-    if (!config.headers?.has('Content-Type') && !(config.data instanceof FormData)) {
+    // multipart/form-data：让浏览器自动设置 Content-Type（含 boundary），必须显式移除默认 JSON
+    if (config.data instanceof FormData) {
+      if (config.headers?.has('Content-Type')) {
+        config.headers.delete('Content-Type')
+      }
+    } else if (!config.headers?.has('Content-Type')) {
       config.headers?.set('Content-Type', 'application/json;charset=UTF-8')
     }
     if (ext.showProgress !== false) NProgress.start()
@@ -277,19 +282,24 @@ function handleUnauthorized(msg?: string): void {
   }
   if (unauthorizedPrompted) return
   unauthorizedPrompted = true
-  ElMessageBox.alert(msg || '登录已过期，请重新登录', '提示', {
-    confirmButtonText: '去登录',
+
+  // 用顶部 toast 替代模态框，体验更轻量、灵动；3s 后自动跳转登录页
+  ElMessage({
     type: 'warning',
-  })
-    .then(() => {
-      window.location.href = '/login'
-    })
-    .catch(() => {
-      window.location.href = '/login'
-    })
-    .finally(() => {
+    message: msg || '登录已过期，请重新登录',
+    duration: 3000,
+    customClass: 'hw-unauthorized-toast',
+    onClose: () => {
       unauthorizedPrompted = false
-    })
+      window.location.href = '/login'
+    },
+  })
+  // 兜底：toast 关闭事件在某些场景（duration:0 / 手动关闭）下不一定触发，
+  // 这里再设一个定时器确保一定跳转到登录页
+  window.setTimeout(() => {
+    unauthorizedPrompted = false
+    window.location.href = '/login'
+  }, 3200)
 }
 
 export interface RequestOptions {

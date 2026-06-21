@@ -151,6 +151,21 @@ function togglePassword() {
   &__prefix {
     color: $text-placeholder;
     margin-right: $spacing-sm;
+    // 关键：el-icon 必须有显式尺寸，否则内部 svg 会撑爆容器
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    --size: 16px;
+
+    svg {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
   }
 
   &__inner {
@@ -170,6 +185,23 @@ function togglePassword() {
     gap: 4px;
     color: $text-placeholder;
     font-size: $font-size-sm;
+
+    .el-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      --size: 16px;
+
+      svg {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+    }
   }
 
   &__hint {

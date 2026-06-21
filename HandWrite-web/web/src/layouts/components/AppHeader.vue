@@ -41,6 +41,7 @@
                 <el-dropdown-item @click="goProfile">个人中心</el-dropdown-item>
                 <el-dropdown-item @click="goMySamples">我的样本</el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                <el-dropdown-item @click="goAdmin">管理中心</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -76,6 +77,7 @@ const navItems = [
   { path: '/sample/my', label: '我的样本' },
   { path: '/notices', label: '公告' },
   { path: '/about', label: '关于' },
+  { path: '/urls', label: 'URL' },
 ]
 
 function onScroll() {
@@ -94,6 +96,9 @@ function goProfile() {
 }
 function goMySamples() {
   router.push('/sample/my')
+}
+function goAdmin() {
+  router.push('/admin/')
 }
 async function handleLogout() {
   try {

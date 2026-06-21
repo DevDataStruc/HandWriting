@@ -24,6 +24,9 @@ public class FileSignVO implements Serializable {
     @Schema(description = "PUT 方式的上传 URL，前端可直接 PUT 文件")
     private String uploadUrl;
 
+    @Schema(description = "公开访问 URL（不含 SAS 令牌，用于落库或展示）")
+    private String accessUrl;
+
     @Schema(description = "上传方式：PUT")
     private String method = "PUT";
 

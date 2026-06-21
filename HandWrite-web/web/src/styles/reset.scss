@@ -35,6 +35,20 @@ body {
   isolation: isolate;
 }
 
+/**
+ * 关键：html / body / #app 不允许出现 transform / filter / perspective /
+ * will-change / backdrop-filter / contain: paint，否则 Element Plus 浮层
+ * （el-message / el-notification / el-message-box）会因为 position: fixed
+ * 退化为相对父级定位而显示到错误的位置（页面底部）。
+ */
+html,
+body,
+#app {
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
+}
+
 a {
   color: $color-primary;
   text-decoration: none;

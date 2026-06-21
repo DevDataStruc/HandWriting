@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.example.handwriting.common.constant.CommonConstants.REDIS_KEY_CAPTCHA;
 import static com.example.handwriting.common.constant.CommonConstants.REDIS_KEY_REFRESH;
 
 /**
@@ -46,18 +45,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CaptchaService captchaService;
 
     @Value("${app.jwt.refresh-token-ttl-seconds:604800}")
     private long refreshTtl;
 
     @Transactional
     public LoginVO login(LoginDTO dto) {
-        // 校验图形验证码
-        String code = (String) redisTemplate.opsForValue().get(String.format(REDIS_KEY_CAPTCHA, dto.getCaptchaKey()));
-        if (code == null || !code.equalsIgnoreCase(dto.getCaptchaCode())) {
+        // 校验图形验证码（内存存储）
+        if (!captchaService.verify(dto.getCaptchaKey(), dto.getCaptchaCode())) {
             throw new BizException(ErrorCode.CAPTCHA_INVALID);
         }
-        redisTemplate.delete(String.format(REDIS_KEY_CAPTCHA, dto.getCaptchaKey()));
 
         User u = userRepository.findByUsername(dto.getUsername())
                 .orElseThrow(() -> new BizException(ErrorCode.USER_PASSWORD_INVALID));

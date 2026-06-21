@@ -120,3 +120,4 @@ mvnw.cmd
 .svelte-kit/
 .vercel/
 .netlify/
+/.idea/

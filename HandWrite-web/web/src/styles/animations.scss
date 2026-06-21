@@ -1,7 +1,10 @@
 // =============================================================================
-// Animations
+// Animations — 全局动画定义
 // =============================================================================
+// 注：所有进入动画使用 ease-out，退出动画使用 ease-in，符合 UX 最佳实践
+//     所有动画均尊重 prefers-reduced-motion 用户偏好
 
+/* ---------- 基础过渡 ---------- */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -13,18 +16,63 @@
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slide-down {
-  from { opacity: 0; transform: translateY(-16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes spin {
@@ -41,6 +89,238 @@
   100% { background-position: 200% 0; }
 }
 
+/* ---------- Toast / Message 通知动画 ---------- */
+
+/* 顶部居中：从上方滑入 */
+@keyframes toast-slide-down-in {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-slide-down-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+}
+
+/* 顶部左：从左上滑入 */
+@keyframes toast-topleft-in {
+  from {
+    opacity: 0;
+    transform: translate(-24px, -24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes toast-topleft-out {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-16px, -16px) scale(0.96);
+  }
+}
+
+/* 顶部右：从右上滑入 */
+@keyframes toast-topright-in {
+  from {
+    opacity: 0;
+    transform: translate(24px, -24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes toast-topright-out {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(16px, -16px) scale(0.96);
+  }
+}
+
+/* 底部居中：从下方滑入 */
+@keyframes toast-slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-slide-up-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
+
+/* 底部左：从左下滑入 */
+@keyframes toast-bottomleft-in {
+  from {
+    opacity: 0;
+    transform: translate(-24px, 24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes toast-bottomleft-out {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-16px, 16px) scale(0.96);
+  }
+}
+
+/* 底部右：从右下滑入 */
+@keyframes toast-bottomright-in {
+  from {
+    opacity: 0;
+    transform: translate(24px, 24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes toast-bottomright-out {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(16px, 16px) scale(0.96);
+  }
+}
+
+/* ---------- Notification 通知动画 ---------- */
+
+/* 左侧通知：从左侧滑入（元素定位在左上角时使用） */
+@keyframes notif-from-left-in {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 左侧通知：向左滑出 */
+@keyframes notif-from-left-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+/* 右侧通知：从右侧滑入（兼容旧 placement） */
+@keyframes notif-from-right-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 右侧通知：向右滑出 */
+@keyframes notif-from-right-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* ---------- Modal/Dialog 动画 ---------- */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modal-in-dialog {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ---------- 通用工具类 ---------- */
 .anim-fade-in {
   animation: fade-in 0.3s ease-out both;
 }
@@ -55,4 +335,15 @@
 
 .anim-pulse {
   animation: pulse 2s ease-in-out infinite;
+}
+
+/* ---------- prefers-reduced-motion 无障碍支持 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
