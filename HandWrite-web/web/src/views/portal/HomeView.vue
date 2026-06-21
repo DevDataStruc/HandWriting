@@ -69,12 +69,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
+import { fetchPublicOverview } from '@/api/publicStats'
+import { formatNumber } from '@/utils/format'
 
-const stats = ref({ samples: '12,580', users: '326', chars: '3,755' })
+const stats = ref({ samples: '—', users: '—', chars: '—' })
 const demoChars = '永字八法楷行草书笔墨纸砚诗酒花月'.split('')
+
+/**
+ * 门户首页统计：调用公开接口 /v1/public/stats/overview
+ *  - totalSamples -> 累计样本
+ *  - totalUsers   -> 参与用户
+ *  - totalChars   -> 覆盖字符（已启用字典条数）
+ * 失败时保留占位符 "—"，避免页面崩溃
+ */
+async function loadStats() {
+  try {
+    const data = await fetchPublicOverview()
+    stats.value = {
+      samples: formatNumber(data.totalSamples),
+      users: formatNumber(data.totalUsers),
+      chars: formatNumber(data.totalChars),
+    }
+  } catch {
+    // 接口异常时保留占位符，不影响首屏渲染
+  }
+}
+
+onMounted(loadStats)
 
 const features = [
   {

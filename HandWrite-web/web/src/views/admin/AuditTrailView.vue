@@ -14,7 +14,7 @@
             </select>
           </div>
           <div class="filter-field">
-            <span class="filter-field__ico">&#128269;</span>
+            <SvgIcon icon-name="search" :size="16" class="filter-field__ico" />
             <input v-model="keyword" class="filter-field__ctrl" placeholder="搜索字符/提交人..." />
           </div>
           <button class="filter-go" @click="handleQuery">查询</button>
@@ -85,7 +85,7 @@
         </table>
 
         <div v-if="filteredRows.length === 0" class="trail-empty">
-          <div class="trail-empty__ico">&#128196;</div>
+          <SvgIcon icon-name="clipboard" :size="48" class="trail-empty__ico" />
           <p>暂无日志记录</p>
         </div>
       </div>
@@ -171,10 +171,12 @@
             <button class="card-btn card-btn--ghost" @click="closeCard">关闭</button>
             <template v-if="cardTarget.statusKey === 'pending'">
               <button class="card-btn card-btn--no" :disabled="cardActing" @click="cardReject()">
-                ✕ 驳回
+                <SvgIcon icon-name="close" :size="14" />
+                <span>驳回</span>
               </button>
               <button class="card-btn card-btn--ok" :disabled="cardActing" @click="cardApprove()">
-                ✓ 通过
+                <SvgIcon icon-name="check" :size="14" />
+                <span>通过</span>
               </button>
             </template>
           </footer>
@@ -937,6 +939,9 @@ onMounted(loadHistory)
   transition: all 0.2s;
   background: var(--bg-hover);
   color: var(--text-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .card-btn:hover:not(:disabled) {
   background: var(--bg-elevated);

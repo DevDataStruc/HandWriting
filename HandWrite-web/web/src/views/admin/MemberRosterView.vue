@@ -5,7 +5,7 @@
         <h2>成员管理</h2>
         <div class="roster-panel__tools">
           <div class="search-box">
-            <span class="search-box__icon">🔍</span>
+            <SvgIcon icon-name="search" :size="16" class="search-box__icon" />
             <input
               v-model="keyword"
               type="text"
@@ -61,21 +61,23 @@
             </div>
           </div>
           <div class="roster-card__actions">
-            <button class="icon-btn" title="编辑" @click="handleEdit(user)">✏️</button>
+            <button class="icon-btn" title="编辑" @click="handleEdit(user)">
+              <SvgIcon icon-name="edit" :size="16" />
+            </button>
             <button
               class="icon-btn"
               :class="user.active ? 'icon-btn--danger' : 'icon-btn--success'"
               :title="user.active ? '禁用' : '启用'"
               @click="handleToggle(user)"
             >
-              {{ user.active ? '🚫' : '✅' }}
+              <SvgIcon :icon-name="user.active ? 'ban' : 'check-circle'" :size="16" />
             </button>
           </div>
         </div>
       </div>
 
       <div v-if="filteredUsers.length === 0" class="empty-state">
-        <div class="empty-state__icon">👤</div>
+        <SvgIcon icon-name="user" :size="48" class="empty-state__icon" />
         <p class="empty-state__text">未找到匹配的成员</p>
       </div>
 
@@ -104,7 +106,9 @@
         <div class="edit-dialog">
           <header class="edit-dialog__head">
             <h3>编辑成员身份</h3>
-            <button class="edit-dialog__close" @click="closeEditModal">✕</button>
+            <button class="edit-dialog__close" @click="closeEditModal">
+              <SvgIcon icon-name="close" :size="16" />
+            </button>
           </header>
 
           <div class="edit-dialog__body">
@@ -633,20 +637,23 @@ onMounted(loadUsers)
   border-radius: 8px;
   background: var(--bg-card);
   cursor: pointer;
-  font-size: 16px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
 }
 
 .icon-btn:hover {
   background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
-.icon-btn--danger:hover {
-  background: var(--accent-red-soft);
+.icon-btn--danger {
+  color: var(--accent-red);
 }
-
-.icon-btn--success:hover {
-  background: var(--accent-green-soft);
+.icon-btn--success {
+  color: var(--accent-green);
 }
 
 .empty-state {
@@ -770,10 +777,12 @@ onMounted(loadUsers)
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 16px;
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .edit-dialog__close:hover {
   background: var(--bg-hover);

@@ -2,9 +2,7 @@
   <BaseCard hoverable class="stats-card" :variant="variant">
     <div class="stats-card__inner">
       <div class="stats-card__icon" :style="{ background: iconBg }">
-        <el-icon :size="24" :color="iconColor">
-          <component :is="iconName" />
-        </el-icon>
+        <SvgIcon :icon-name="iconName" :size="22" :color="iconColor" />
       </div>
       <div class="stats-card__body">
         <div class="stats-card__label">{{ label }}</div>
@@ -13,9 +11,7 @@
           <span v-if="suffix" class="suffix">{{ suffix }}</span>
         </div>
         <div v-if="trend != null" class="stats-card__trend" :class="trendClass">
-          <el-icon :size="12">
-            <component :is="trend >= 0 ? 'CaretTop' : 'CaretBottom'" />
-          </el-icon>
+          <SvgIcon :icon-name="trend >= 0 ? 'caret-up' : 'caret-down'" :size="12" />
           <span>{{ Math.abs(trend) }}%</span>
           <span v-if="trendLabel" class="trend-label">{{ trendLabel }}</span>
         </div>

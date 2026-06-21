@@ -6,12 +6,12 @@
         <h2>审核工作台</h2>
         <div class="bench-topbar__actions">
           <div class="text-field">
-            <span class="text-field__glyph">&#128269;</span>
+            <SvgIcon icon-name="search" :size="16" class="text-field__glyph" />
             <input v-model="keyword" class="text-field__ctrl" placeholder="搜索字符/用户..." />
           </div>
           <!-- 状态筛选 -->
           <div class="text-field text-field--select">
-            <span class="text-field__glyph">&#128196;</span>
+            <SvgIcon icon-name="clipboard" :size="16" class="text-field__glyph" />
             <select v-model="statusFilter" class="text-field__ctrl" @change="handleQuery">
               <option value="">全部状态</option>
               <option value="PENDING">待审核</option>
@@ -21,7 +21,7 @@
           </div>
           <!-- 日期范围 -->
           <div class="text-field">
-            <span class="text-field__glyph">&#128197;</span>
+            <SvgIcon icon-name="calendar" :size="16" class="text-field__glyph" />
             <input
               v-model="dateRange"
               class="text-field__ctrl"
@@ -116,14 +116,20 @@
           </div>
 
           <div class="review-entry__ops">
-            <button class="op-btn op-btn--pass" @click="approveItem(item)">&#10003; 通过</button>
-            <button class="op-btn op-btn--fail" @click="rejectItem(item)">&#10007; 驳回</button>
+            <button class="op-btn op-btn--pass" @click="approveItem(item)">
+              <SvgIcon icon-name="check" :size="14" />
+              <span>通过</span>
+            </button>
+            <button class="op-btn op-btn--fail" @click="rejectItem(item)">
+              <SvgIcon icon-name="close" :size="14" />
+              <span>驳回</span>
+            </button>
           </div>
         </div>
       </div>
 
       <div v-if="filteredList.length === 0" class="review-empty">
-        <div class="review-empty__icon">&#128203;</div>
+        <SvgIcon icon-name="clipboard" :size="48" class="review-empty__icon" />
         <p>暂无待审核项</p>
       </div>
 
@@ -252,8 +258,6 @@ const rejectReason = ref('')
 const rejectTarget = ref<ReviewRow | null>(null)
 const toast = ref('')
 let toastTimer: ReturnType<typeof setTimeout> | null = null
-
-
 
 /* ========================= 计算属性 ========================= */
 function parseDateRange(): { from: string; to: string } | null {
@@ -840,9 +844,10 @@ onMounted(loadPending)
   padding: 60px 20px;
 }
 .review-empty__icon {
-  font-size: 48px;
   margin-bottom: 12px;
   opacity: 0.5;
+  color: var(--text-dim);
+  display: inline-flex;
 }
 .review-empty p {
   font-size: 14px;

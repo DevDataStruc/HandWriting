@@ -9,6 +9,7 @@ export * as sampleApi from './sample'
 export * as fileApi from './file'
 export * as auditApi from './audit'
 export * as statsApi from './stats'
+export * as dictAdminApi from './dict-admin'
 
 export type * from './contracts/common'
 export type * from './contracts/auth'

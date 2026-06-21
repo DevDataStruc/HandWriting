@@ -57,5 +57,15 @@ export interface DictProgress {
   progress: number
 }
 
+/**
+ * 首页公开展示统计（GET /v1/public/stats/overview）
+ * 面向未登录用户，仅返回三个脱敏数字
+ */
+export interface PublicStatsOverviewVO {
+  totalSamples: number
+  totalUsers: number
+  totalChars: number
+}
+
 /** 审核历史分页 */
 export type AuditHistoryPageResult = PageResult<unknown>

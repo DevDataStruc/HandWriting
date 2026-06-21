@@ -134,6 +134,9 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .user-management {
+  .user-search__icon {
+    color: $text-secondary;
+  }
   .user-cell {
     @include flex-start;
     gap: $spacing-sm;

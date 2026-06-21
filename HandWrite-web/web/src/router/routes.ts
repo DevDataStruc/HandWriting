@@ -85,7 +85,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin',
-  component: () => import('@/layouts/AdminLayout.vue'),
+    component: () => import('@/layouts/AdminLayout.vue'),
     meta: { layout: 'admin', requiresAuth: false, roles: STAFF_ROLES },
     children: [
       {
@@ -109,6 +109,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'SampleAudit',
         component: () => import('@/views/admin/SampleAuditView.vue'),
         meta: { title: '样本审核', icon: 'check', roles: STAFF_ROLES },
+      },
+      {
+        path: 'dict-input',
+        name: 'DictInput',
+        component: () => import('@/views/admin/DictInputView.vue'),
+        meta: { title: '字符字典录入', icon: 'dict', roles: ADMIN_ONLY },
       },
       {
         path: 'stats',

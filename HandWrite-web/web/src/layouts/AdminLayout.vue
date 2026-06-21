@@ -3,7 +3,9 @@
     <!-- 侧边栏 -->
     <aside class="console-sidebar">
       <div class="console-sidebar__brand">
-        <div class="brand-mark">⚡</div>
+        <div class="brand-mark">
+          <img :src="logoUrl" alt="logo" class="brand-mark__img" />
+        </div>
         <span class="brand-text">管理控制台</span>
       </div>
 
@@ -15,7 +17,7 @@
           :class="{ 'menu-entry--active': activeKey === item.key }"
           @click="onMenuClick(item.key)"
         >
-          <span class="menu-entry__glyph">{{ item.glyph }}</span>
+          <SvgIcon :icon-name="item.icon" :size="18" class="menu-entry__icon" />
           <span class="menu-entry__label">{{ item.label }}</span>
           <span v-if="getBadge(item.key)" class="menu-entry__badge">{{ getBadge(item.key) }}</span>
         </button>
@@ -23,7 +25,7 @@
 
       <div class="console-sidebar__foot">
         <button class="foot-entry" @click="isFolded = !isFolded">
-          <span class="foot-entry__glyph">{{ isFolded ? '›' : '‹' }}</span>
+          <SvgIcon :icon-name="isFolded ? 'chevron-right' : 'chevron-left'" :size="16" />
           <span class="foot-entry__label">收起侧边栏</span>
         </button>
       </div>
@@ -39,16 +41,20 @@
           <span class="crumb-piece crumb-piece--active">{{ activeLabel }}</span>
         </div>
         <div class="console-topbar__tools">
-          <button class="tool-entry" title="刷新" @click="onReload">↻</button>
-          <button class="tool-entry" title="切换主题" @click="onToggleTheme">{{ themeIcon }}</button>
+          <button class="tool-entry" title="刷新" @click="onReload">
+            <SvgIcon icon-name="refresh" :size="18" />
+          </button>
+          <button class="tool-entry" title="切换主题" @click="onToggleTheme">
+            <SvgIcon :icon-name="isDark ? 'sun' : 'moon'" :size="18" />
+          </button>
           <button class="tool-entry tool-entry--notice" title="通知">
-            🔔
+            <SvgIcon icon-name="bell" :size="18" />
             <span class="notice-dot"></span>
           </button>
           <div class="account-trigger" @click="showAccountMenu = !showAccountMenu">
             <div class="account-avatar">A</div>
             <span class="account-name">管理员</span>
-            <span class="account-arrow">▾</span>
+            <SvgIcon icon-name="arrow-down" :size="12" class="account-arrow" />
             <transition name="pop">
               <div v-if="showAccountMenu" class="account-dropdown">
                 <div class="dropdown-cell" @click.stop="onBackPortal">返回门户</div>
@@ -85,12 +91,14 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import logoUrl from '@/assets/logo.svg'
 import { pendingAudits } from '@/api/audit'
 import CommandCenterView from './../views/admin/CommandCenterView.vue'
 import MemberRosterView from './../views/admin/MemberRosterView.vue'
 import ReviewWorkbenchView from './../views/admin/ReviewWorkbenchView.vue'
 import DataInsightView from './../views/admin/DataInsightView.vue'
 import AuditTrailView from './../views/admin/AuditTrailView.vue'
+import DictInputView from './../views/admin/DictInputView.vue'
 const isFolded = ref(false)
 const isDark = ref(true)
 const showAccountMenu = ref(false)
@@ -121,26 +129,26 @@ watch(isDark, (val) => {
   localStorage.setItem('admin-theme', val ? 'dark' : 'light')
 })
 
-
 const menuItems = [
-  { key: 'command', label: '控制台', glyph: '📊' },
-  { key: 'members', label: '成员管理', glyph: '👥' },
-  { key: 'review', label: '审核工作台', glyph: '✅' },
-  { key: 'insight', label: '数据洞察', glyph: '📈' },
-  { key: 'audit', label: '审核日志', glyph: '📋' },
+  { key: 'command', label: '控制台', icon: 'dashboard' },
+  { key: 'members', label: '成员管理', icon: 'users' },
+  { key: 'review', label: '审核工作台', icon: 'audit' },
+  { key: 'dict', label: '字符字典录入', icon: 'dict' },
+  { key: 'insight', label: '数据洞察', icon: 'trend-up' },
+  { key: 'audit', label: '审核日志', icon: 'clipboard' },
 ]
 
 const componentMap = {
   command: CommandCenterView,
   members: MemberRosterView,
   review: ReviewWorkbenchView,
+  dict: DictInputView,
   insight: DataInsightView,
   audit: AuditTrailView,
 }
 
-const activeLabel = computed(() => menuItems.find(i => i.key === activeKey.value)?.label || '')
+const activeLabel = computed(() => menuItems.find((i) => i.key === activeKey.value)?.label || '')
 const activeComponent = computed(() => componentMap[activeKey.value])
-const themeIcon = computed(() => (isDark.value ? '☀' : '☾'))
 
 // 各菜单项的 badge：审核工作台显示未审核数量，其他为空
 function getBadge(key) {
@@ -177,35 +185,36 @@ function onLogout() {
 function onConfirmLogout() {
   if (logoutConfirm.value) {
     try {
-    localStorage.removeItem('hwtoken')
-  } catch { /* empty */ }
-  window.location.href = '/auth/login'
-
-}
+      localStorage.removeItem('hwtoken')
+    } catch {
+      /* empty */
+    }
+    window.location.href = '/auth/login'
+  }
 }
 </script>
 
 <style>
 /* === 全局主题变量（暗色为默认） === */
 .console-layout {
-  --bg-darkest: #0B1120;
-  --bg-base: #0F172A;
-  --bg-card: #1E293B;
+  --bg-darkest: #0b1120;
+  --bg-base: #0f172a;
+  --bg-card: #1e293b;
   --bg-hover: #334155;
   --bg-elevated: #475569;
   --bg-soft: #1a2740;
   --border-base: #334155;
-  --text-primary: #F8FAFC;
-  --text-regular: #E2E8F0;
-  --text-muted: #94A3B8;
-  --text-dim: #64748B;
-  --text-faint: #CBD5E1;
-  --text-on-accent: #0F172A;
-  --accent-green: #22C55E;
-  --accent-green-dark: #16A34A;
-  --accent-blue: #38BDF8;
-  --accent-amber: #F59E0B;
-  --accent-red: #EF4444;
+  --text-primary: #f8fafc;
+  --text-regular: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --text-faint: #cbd5e1;
+  --text-on-accent: #0f172a;
+  --accent-green: #22c55e;
+  --accent-green-dark: #16a34a;
+  --accent-blue: #38bdf8;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
   --accent-teal: #0d9488;
   --accent-green-soft: rgba(34, 197, 94, 0.12);
   --accent-green-soft-hover: rgba(34, 197, 94, 0.25);
@@ -228,42 +237,42 @@ function onConfirmLogout() {
 
 /* === 亮色主题变量 === */
 .console-layout.is-light {
-  --bg-darkest: #F8FAFC;
-  --bg-base: #F1F5F9;
-  --bg-card: #FFFFFF;
-  --bg-hover: #E2E8F0;
-  --bg-elevated: #CBD5E1;
-  --bg-soft: #F1F5F9;
-  --border-base: #E2E8F0;
-  --text-primary: #0F172A;
+  --bg-darkest: #f8fafc;
+  --bg-base: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-hover: #e2e8f0;
+  --bg-elevated: #cbd5e1;
+  --bg-soft: #f1f5f9;
+  --border-base: #e2e8f0;
+  --text-primary: #0f172a;
   --text-regular: #334155;
-  --text-muted: #64748B;
-  --text-dim: #94A3B8;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
   --text-faint: #475569;
-  --text-on-accent: #FFFFFF;
-  --accent-green: #16A34A;
-  --accent-green-dark: #15803D;
-  --accent-blue: #0284C7;
-  --accent-amber: #D97706;
-  --accent-red: #DC2626;
-  --accent-teal: #0F766E;
-  --accent-green-soft: rgba(22, 163, 74, 0.10);
-  --accent-green-soft-hover: rgba(22, 163, 74, 0.20);
-  --accent-red-soft: rgba(220, 38, 38, 0.10);
+  --text-on-accent: #ffffff;
+  --accent-green: #16a34a;
+  --accent-green-dark: #15803d;
+  --accent-blue: #0284c7;
+  --accent-amber: #d97706;
+  --accent-red: #dc2626;
+  --accent-teal: #0f766e;
+  --accent-green-soft: rgba(22, 163, 74, 0.1);
+  --accent-green-soft-hover: rgba(22, 163, 74, 0.2);
+  --accent-red-soft: rgba(220, 38, 38, 0.1);
   --accent-red-soft-hover: rgba(220, 38, 38, 0.18);
-  --accent-amber-soft: rgba(217, 119, 6, 0.10);
-  --accent-amber-soft-hover: rgba(217, 119, 6, 0.20);
-  --accent-blue-soft: rgba(2, 132, 199, 0.10);
-  --accent-blue-soft-hover: rgba(2, 132, 199, 0.20);
-  --accent-teal-soft: rgba(15, 118, 110, 0.10);
-  --accent-teal-soft-hover: rgba(15, 118, 110, 0.20);
+  --accent-amber-soft: rgba(217, 119, 6, 0.1);
+  --accent-amber-soft-hover: rgba(217, 119, 6, 0.2);
+  --accent-blue-soft: rgba(2, 132, 199, 0.1);
+  --accent-blue-soft-hover: rgba(2, 132, 199, 0.2);
+  --accent-teal-soft: rgba(15, 118, 110, 0.1);
+  --accent-teal-soft-hover: rgba(15, 118, 110, 0.2);
   --hover-overlay: rgba(15, 23, 42, 0.04);
   --table-divider: rgba(203, 213, 225, 0.6);
   --overlay-mask: rgba(15, 23, 42, 0.35);
   --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12);
-  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-thumb: #cbd5e1;
 }
 </style>
 
@@ -273,8 +282,10 @@ function onConfirmLogout() {
   min-height: 100vh;
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-  transition: background 0.3s ease, color 0.3s ease;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
 }
 
 .console-sidebar,
@@ -286,7 +297,10 @@ function onConfirmLogout() {
 .account-trigger,
 .menu-entry,
 .foot-entry {
-  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 /* === 侧边栏 === */
@@ -375,9 +389,11 @@ function onConfirmLogout() {
   color: var(--accent-green);
 }
 
-.menu-entry__glyph {
-  font-size: 18px;
+.menu-entry__icon {
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+  color: currentColor;
 }
 
 .menu-entry__label {
@@ -446,6 +462,7 @@ function onConfirmLogout() {
 .foot-entry__glyph {
   font-size: 16px;
   flex-shrink: 0;
+  color: currentColor;
 }
 
 .foot-entry__label {

@@ -101,6 +101,87 @@ public class CharDictService {
         clearDictCache();
     }
 
+    /**
+     * 批量导入字符
+     * <p>
+     * 处理策略：
+     * <ul>
+     *   <li>每条记录尝试入库；若 charValue 已存在则视为跳过而非失败（导入友好）</li>
+     *   <li>条目级字段缺省时使用 dto 顶层默认值（defaultCategory / defaultDifficulty ...）</li>
+     *   <li>整批作为一个事务，任一行脏数据可导致整体回滚（保守做法，保留一致性）</li>
+     * </ul>
+     *
+     * @return 包含 inserted/skipped/failed 的 VO
+     */
+    @Transactional
+    public com.example.handwriting.dict.dto.CharDictImportResultVO batchCreateWithDefaults(
+            com.example.handwriting.dict.dto.CharDictBatchCreateDTO dto,
+            List<com.example.handwriting.dict.dto.CharDictBatchCreateDTO.Item> rawItems) {
+        if (rawItems == null || rawItems.isEmpty()) {
+            com.example.handwriting.dict.dto.CharDictImportResultVO empty =
+                    new com.example.handwriting.dict.dto.CharDictImportResultVO();
+            empty.setMessage("未提供字符条目");
+            return empty;
+        }
+
+        String defaultCategory = (dto == null || dto.getDefaultCategory() == null
+                || dto.getDefaultCategory().isBlank()) ? "HANZI" : dto.getDefaultCategory();
+        Integer defaultDifficulty = (dto == null || dto.getDefaultDifficulty() == null)
+                ? 1 : dto.getDefaultDifficulty();
+        String defaultDescription = (dto == null) ? null : dto.getDefaultDescription();
+        Integer defaultEnabled = (dto == null || dto.getDefaultEnabled() == null) ? 1 : dto.getDefaultEnabled();
+
+        com.example.handwriting.dict.dto.CharDictImportResultVO result =
+                new com.example.handwriting.dict.dto.CharDictImportResultVO();
+        java.util.List<CharDict> toSave = new java.util.ArrayList<>();
+        java.util.List<String> failedSamples = new java.util.ArrayList<>();
+
+        for (com.example.handwriting.dict.dto.CharDictBatchCreateDTO.Item it : rawItems) {
+            if (it == null || it.getCharValue() == null || it.getCharValue().isBlank()) {
+                continue;
+            }
+            String cv = it.getCharValue().trim();
+            // 单字符长度上限 8（与 DTO 注解保持一致）
+            if (cv.length() > 8) {
+                failedSamples.add(cv);
+                continue;
+            }
+            if (repository.existsByCharValue(cv)) {
+                result.setSkipped(result.getSkipped() + 1);
+                continue;
+            }
+            try {
+                CharDict entity = new CharDict();
+                entity.setCharValue(cv);
+                entity.setCategory(it.getCategory() == null || it.getCategory().isBlank()
+                        ? defaultCategory : it.getCategory());
+                entity.setDifficulty(it.getDifficulty() == null ? defaultDifficulty : it.getDifficulty());
+                entity.setDescription(it.getDescription() == null ? defaultDescription : it.getDescription());
+                entity.setEnabled(it.getEnabled() == null ? defaultEnabled : it.getEnabled());
+                toSave.add(entity);
+            } catch (Exception ex) {
+                failedSamples.add(cv);
+            }
+        }
+
+        if (!toSave.isEmpty()) {
+            repository.saveAll(toSave);
+            result.setInserted(toSave.size());
+        }
+        result.setFailed(failedSamples.size());
+        // 截断样本
+        if (failedSamples.size() > 50) {
+            result.setFailedSamples(failedSamples.subList(0, 50));
+        } else {
+            result.setFailedSamples(failedSamples);
+        }
+        result.setMessage(String.format("新增 %d，跳过 %d，失败 %d", result.getInserted(), result.getSkipped(), result.getFailed()));
+        if (result.getInserted() > 0) {
+            clearDictCache();
+        }
+        return result;
+    }
+
     private void clearDictCache() {
         for (String category : List.of("ALL", "HANZI", "DIGIT", "LETTER", "SYMBOL")) {
             redisTemplate.delete(String.format(REDIS_KEY_DICT_CACHE, category));

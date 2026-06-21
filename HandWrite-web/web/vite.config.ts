@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
       }),
       createSvgIconsPlugin({
         iconDirs: [path.resolve(process.cwd(), 'src/assets/icons')],
-        symbolId: 'icon-[dir]-[name]',
+        symbolId: 'icon-[name]',
       }),
       viteMockServe({
         mockPath: 'mock',

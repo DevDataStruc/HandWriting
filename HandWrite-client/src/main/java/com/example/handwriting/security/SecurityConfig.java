@@ -54,6 +54,8 @@ public class SecurityConfig {
                             "/v1/auth/register",
                             "/v1/auth/captcha",
                             "/v1/auth/refresh",
+                            // 门户首页等公开统计
+                            "/v1/public/**",
                             "/v3/api-docs/**",
                             "/swagger-ui/**",
                             "/swagger-ui.html",

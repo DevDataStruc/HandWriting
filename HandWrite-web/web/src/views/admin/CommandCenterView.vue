@@ -3,7 +3,9 @@
     <!-- 指标卡片行 -->
     <section class="kpi-strip">
       <div v-for="m in metrics" :key="m.tag" class="kpi-tile" :class="'kpi-tile--' + m.tone">
-        <div class="kpi-tile__badge">{{ m.icon }}</div>
+        <div class="kpi-tile__badge">
+          <SvgIcon :icon-name="m.icon" :size="22" />
+        </div>
         <div class="kpi-tile__body">
           <span class="kpi-tile__caption">{{ m.tag }}</span>
           <span class="kpi-tile__figure">{{ m.num }}</span>
@@ -194,10 +196,22 @@ function buildMetrics(vo: StatsOverviewVO | null) {
   }
   const g = Number(safe.growthRate ?? 0)
   metrics.value = [
-    { tag: '总收录量', num: formatNumber(safe.totalSamples), icon: '📦', tone: 'teal', delta: g },
-    { tag: '注册用户', num: formatNumber(safe.totalUsers), icon: '👥', tone: 'blue', delta: 0 },
-    { tag: '待处理', num: formatNumber(safe.pendingAudits), icon: '🔔', tone: 'amber', delta: 0 },
-    { tag: '今日新增', num: formatNumber(safe.todaySamples), icon: '📈', tone: 'green', delta: 0 },
+    {
+      tag: '总收录量',
+      num: formatNumber(safe.totalSamples),
+      icon: 'package',
+      tone: 'teal',
+      delta: g,
+    },
+    { tag: '注册用户', num: formatNumber(safe.totalUsers), icon: 'users', tone: 'blue', delta: 0 },
+    { tag: '待处理', num: formatNumber(safe.pendingAudits), icon: 'bell', tone: 'amber', delta: 0 },
+    {
+      tag: '今日新增',
+      num: formatNumber(safe.todaySamples),
+      icon: 'trend-up',
+      tone: 'green',
+      delta: 0,
+    },
   ]
 }
 
@@ -380,20 +394,23 @@ onMounted(loadAll)
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
   flex-shrink: 0;
 }
 .kpi-tile--teal .kpi-tile__badge {
   background: var(--accent-teal-soft);
+  color: var(--accent-teal);
 }
 .kpi-tile--blue .kpi-tile__badge {
   background: var(--accent-blue-soft);
+  color: var(--accent-blue);
 }
 .kpi-tile--amber .kpi-tile__badge {
   background: var(--accent-amber-soft);
+  color: var(--accent-amber);
 }
 .kpi-tile--green .kpi-tile__badge {
   background: var(--accent-green-soft);
+  color: var(--accent-green);
 }
 
 .kpi-tile__body {
