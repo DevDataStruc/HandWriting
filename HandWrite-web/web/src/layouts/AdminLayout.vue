@@ -17,7 +17,7 @@
         >
           <span class="menu-entry__glyph">{{ item.glyph }}</span>
           <span class="menu-entry__label">{{ item.label }}</span>
-          <span v-if="item.badge" class="menu-entry__badge">{{ item.badge }}</span>
+          <span v-if="getBadge(item.key)" class="menu-entry__badge">{{ getBadge(item.key) }}</span>
         </button>
       </nav>
 
@@ -85,32 +85,47 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { pendingAudits } from '@/api/audit'
 import CommandCenterView from './../views/admin/CommandCenterView.vue'
 import MemberRosterView from './../views/admin/MemberRosterView.vue'
 import ReviewWorkbenchView from './../views/admin/ReviewWorkbenchView.vue'
 import DataInsightView from './../views/admin/DataInsightView.vue'
 import AuditTrailView from './../views/admin/AuditTrailView.vue'
-
 const isFolded = ref(false)
 const isDark = ref(true)
 const showAccountMenu = ref(false)
 const logoutConfirm = ref(false)
 const activeKey = ref('command')
 
+// 待审核数量（驱动侧边栏 badge）
+const pendingTotal = ref(0)
+
+async function loadPendingTotal() {
+  try {
+    const res = await pendingAudits({ pageNum: 1, pageSize: 1 })
+    pendingTotal.value = Number(res.total ?? 0)
+  } catch (err) {
+    console.error('[AdminLayout] 加载待审核数量失败', err)
+    pendingTotal.value = 0
+  }
+}
+
 onMounted(() => {
   const saved = localStorage.getItem('admin-theme')
   if (saved === 'light') isDark.value = false
   else if (saved === 'dark') isDark.value = true
+  loadPendingTotal()
 })
 
 watch(isDark, (val) => {
   localStorage.setItem('admin-theme', val ? 'dark' : 'light')
 })
 
+
 const menuItems = [
   { key: 'command', label: '控制台', glyph: '📊' },
   { key: 'members', label: '成员管理', glyph: '👥' },
-  { key: 'review', label: '审核工作台', glyph: '✅', badge: 5 },
+  { key: 'review', label: '审核工作台', glyph: '✅' },
   { key: 'insight', label: '数据洞察', glyph: '📈' },
   { key: 'audit', label: '审核日志', glyph: '📋' },
 ]
@@ -127,8 +142,16 @@ const activeLabel = computed(() => menuItems.find(i => i.key === activeKey.value
 const activeComponent = computed(() => componentMap[activeKey.value])
 const themeIcon = computed(() => (isDark.value ? '☀' : '☾'))
 
+// 各菜单项的 badge：审核工作台显示未审核数量，其他为空
+function getBadge(key) {
+  if (key === 'review') return pendingTotal.value > 0 ? pendingTotal.value : ''
+  return ''
+}
+
 function onMenuClick(key) {
   activeKey.value = key
+  // 切换菜单时刷新未审核数，确保审核后 badge 同步
+  loadPendingTotal()
 }
 
 function onReload() {

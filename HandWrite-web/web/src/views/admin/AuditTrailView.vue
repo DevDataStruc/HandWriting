@@ -37,13 +37,26 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in filteredRows" :key="row.id" class="trail-table__tr">
+            <tr
+              v-for="row in filteredRows"
+              :key="row.id"
+              class="trail-table__tr"
+              :class="{ 'is-clickable': true, 'is-pending': row.statusKey === 'pending' }"
+              @click="openCard(row)"
+            >
               <td class="trail-table__td">
                 <span class="glyph-label">{{ row.glyph }}</span>
               </td>
               <td class="trail-table__td">
-                <div class="thumb-box" :style="{ background: row.bg }">
-                  <span>{{ row.glyph }}</span>
+                <div class="thumb-box" :style="row.fileUrl ? {} : { background: row.bg }">
+                  <img
+                    v-if="row.fileUrl"
+                    :src="row.fileUrl"
+                    :alt="row.glyph"
+                    class="thumb-img"
+                    @error="onImgError($event, row)"
+                  />
+                  <span v-else>{{ row.glyph }}</span>
                 </div>
               </td>
               <td class="trail-table__td">
@@ -94,6 +107,101 @@
         </div>
       </footer>
     </div>
+
+    <!-- 审核记录详情卡片 -->
+    <transition name="pop">
+      <div v-if="cardTarget" class="card-mask" @click.self="closeCard">
+        <div class="audit-card">
+          <header class="audit-card__head">
+            <h3>审核记录详情</h3>
+            <span class="status-chip" :class="'status-chip--' + cardTarget.statusKey">
+              {{ cardTarget.statusLabel }}
+            </span>
+            <button class="audit-card__close" @click="closeCard">✕</button>
+          </header>
+
+          <div class="audit-card__body">
+            <div class="audit-card__art">
+              <div
+                class="art-frame"
+                :style="cardTarget.fileUrl ? {} : { background: cardTarget.bg }"
+              >
+                <img
+                  v-if="cardTarget.fileUrl"
+                  :src="cardTarget.fileUrl"
+                  :alt="cardTarget.glyph"
+                  class="art-img"
+                  @error="onImgError($event, cardTarget)"
+                />
+                <span v-else class="art-fallback">{{ cardTarget.glyph }}</span>
+              </div>
+              <div class="art-meta">
+                <div class="art-glyph">{{ cardTarget.glyph }}</div>
+                <div class="art-id">#{{ cardTarget.id }}</div>
+              </div>
+            </div>
+
+            <div class="audit-card__info">
+              <dl class="info-grid">
+                <div class="info-grid__row">
+                  <dt>提交人</dt>
+                  <dd>@{{ cardTarget.submitter }}</dd>
+                </div>
+                <div class="info-grid__row">
+                  <dt>提交时间</dt>
+                  <dd>{{ cardTarget.submitTime || '—' }}</dd>
+                </div>
+                <div class="info-grid__row">
+                  <dt>审核人</dt>
+                  <dd>{{ cardTarget.auditor ? '@' + cardTarget.auditor : '—' }}</dd>
+                </div>
+                <div class="info-grid__row">
+                  <dt>审核时间</dt>
+                  <dd>{{ cardTarget.auditTime || '—' }}</dd>
+                </div>
+                <div v-if="cardTarget.reason" class="info-grid__row info-grid__row--full">
+                  <dt>驳回原因</dt>
+                  <dd>{{ cardTarget.reason }}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <footer class="audit-card__foot">
+            <button class="card-btn card-btn--ghost" @click="closeCard">关闭</button>
+            <template v-if="cardTarget.statusKey === 'pending'">
+              <button class="card-btn card-btn--no" :disabled="cardActing" @click="cardReject()">
+                ✕ 驳回
+              </button>
+              <button class="card-btn card-btn--ok" :disabled="cardActing" @click="cardApprove()">
+                ✓ 通过
+              </button>
+            </template>
+          </footer>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 卡片内驳回原因弹层（覆盖在卡片之上） -->
+    <transition name="pop">
+      <div v-if="showCardReject" class="card-mask" @click.self="showCardReject = false">
+        <div class="reject-dialog">
+          <h3>驳回原因</h3>
+          <textarea
+            v-model="cardRejectReason"
+            class="reject-dialog__area"
+            placeholder="请输入驳回原因..."
+            rows="4"
+          ></textarea>
+          <div class="reject-dialog__btns">
+            <button class="pill-btn" @click="showCardReject = false">取消</button>
+            <button class="pill-btn pill-btn--no" :disabled="cardActing" @click="confirmCardReject">
+              确认驳回
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -116,7 +224,8 @@
  *   - auditTime   ← auditedTime 格式化
  */
 import { ref, computed, onMounted, watch } from 'vue'
-import { auditHistory } from '@/api/audit'
+import { ElMessage } from 'element-plus'
+import { auditHistory, approve, reject } from '@/api/audit'
 import type { SampleVO } from '@/api/contracts/sample'
 
 /* ========================= 类型与常量 ========================= */
@@ -126,6 +235,7 @@ interface TrailRow {
   id: string
   glyph: string
   bg: string
+  fileUrl: string
   submitter: string
   statusKey: Exclude<StatusKey, ''>
   statusLabel: string
@@ -133,6 +243,13 @@ interface TrailRow {
   auditTime: string
   reason: string
   submitTime: string
+  status: number
+  userId: number
+  charId: number
+  rejectReason: string
+  auditedBy: number
+  createTime: string
+  auditedTime: string
 }
 
 const GRADIENT_PALETTE = [
@@ -170,6 +287,12 @@ const logRows = ref<TrailRow[]>([])
 const total = ref(0)
 const loading = ref(false)
 
+/* ========================= 详情卡片状态 ========================= */
+const cardTarget = ref<TrailRow | null>(null)
+const cardActing = ref(false)
+const showCardReject = ref(false)
+const cardRejectReason = ref('')
+
 /* ========================= 计算属性 ========================= */
 const filteredRows = computed(() => logRows.value)
 
@@ -195,6 +318,7 @@ function mapSampleVO(vo: SampleVO): TrailRow {
     id: String(vo.id),
     glyph: vo.char || '?',
     bg: pickGradient(Number(vo.charId)),
+    fileUrl: vo.fileUrl || '',
     submitter: `user#${vo.userId}`,
     statusKey: s.key,
     statusLabel: s.label,
@@ -202,6 +326,108 @@ function mapSampleVO(vo: SampleVO): TrailRow {
     auditTime: formatTime(vo.auditedTime),
     reason: vo.rejectReason || '',
     submitTime: formatTime(vo.createTime),
+    status: Number(vo.status ?? 0),
+    userId: Number(vo.userId ?? 0),
+    charId: Number(vo.charId ?? 0),
+    rejectReason: vo.rejectReason || '',
+    auditedBy: Number(vo.auditedBy ?? 0),
+    createTime: vo.createTime || '',
+    auditedTime: vo.auditedTime || '',
+  }
+}
+
+/**
+ * 图片加载失败：清空该行的 fileUrl，回退到渐变 + 文字。
+ */
+function onImgError(_evt: Event, item: TrailRow) {
+  if (item.fileUrl) {
+    item.fileUrl = ''
+  }
+}
+
+/* ========================= 详情卡片操作 ========================= */
+function openCard(row: TrailRow) {
+  // 拷贝一份避免直接修改列表行
+  cardTarget.value = { ...row }
+  cardRejectReason.value = ''
+  showCardReject.value = false
+}
+
+function closeCard() {
+  cardTarget.value = null
+  cardRejectReason.value = ''
+  showCardReject.value = false
+}
+
+async function cardApprove() {
+  if (!cardTarget.value || cardActing.value) return
+  const id = Number(cardTarget.value.id)
+  cardActing.value = true
+  try {
+    await approve(id, {})
+    // 同步更新列表行
+    const idx = logRows.value.findIndex((r) => r.id === cardTarget.value!.id)
+    if (idx >= 0) {
+      const now = formatTime(new Date().toISOString())
+      logRows.value[idx] = {
+        ...logRows.value[idx],
+        status: 1,
+        statusKey: 'approved',
+        statusLabel: '通过',
+        reason: '',
+        auditTime: now,
+        auditedTime: new Date().toISOString(),
+      }
+    }
+    ElMessage.success(`已通过：${cardTarget.value.glyph}`)
+    closeCard()
+  } catch (err) {
+    console.error('[AuditTrail] 卡片-通过失败', err)
+    ElMessage.error('通过失败')
+  } finally {
+    cardActing.value = false
+  }
+}
+
+function cardReject() {
+  if (!cardTarget.value) return
+  cardRejectReason.value = ''
+  showCardReject.value = true
+}
+
+async function confirmCardReject() {
+  if (!cardTarget.value || cardActing.value) return
+  if (!cardRejectReason.value.trim()) {
+    ElMessage.warning('请填写驳回原因')
+    return
+  }
+  const id = Number(cardTarget.value.id)
+  const reason = cardRejectReason.value.trim()
+  cardActing.value = true
+  try {
+    await reject(id, { reason })
+    const idx = logRows.value.findIndex((r) => r.id === cardTarget.value!.id)
+    if (idx >= 0) {
+      const now = formatTime(new Date().toISOString())
+      logRows.value[idx] = {
+        ...logRows.value[idx],
+        status: 2,
+        statusKey: 'rejected',
+        statusLabel: '驳回',
+        reason,
+        rejectReason: reason,
+        auditTime: now,
+        auditedTime: new Date().toISOString(),
+      }
+    }
+    ElMessage.success(`已驳回：${cardTarget.value.glyph}`)
+    showCardReject.value = false
+    closeCard()
+  } catch (err) {
+    console.error('[AuditTrail] 卡片-驳回失败', err)
+    ElMessage.error('驳回失败')
+  } finally {
+    cardActing.value = false
   }
 }
 
@@ -531,5 +757,285 @@ onMounted(loadHistory)
   background: var(--accent-green);
   color: var(--text-on-accent);
   font-weight: 600;
+}
+
+/* === 行点击 === */
+.trail-table__tr {
+  cursor: default;
+  transition: background 0.15s;
+}
+.trail-table__tr.is-clickable {
+  cursor: pointer;
+}
+.trail-table__tr.is-clickable:hover {
+  background: var(--hover-overlay);
+}
+.trail-table__tr.is-pending td {
+  border-left: 2px solid transparent;
+}
+.trail-table__tr.is-pending:hover td:first-child {
+  border-left-color: var(--accent-amber);
+}
+
+/* === 缩略图真实样本 === */
+.thumb-box .thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: inherit;
+  background: #fff;
+}
+
+/* === 审核详情卡片 === */
+.card-mask {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-mask);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.audit-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  width: 640px;
+  max-width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.audit-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-base);
+}
+.audit-card__head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+.audit-card__close {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.audit-card__close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.audit-card__body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  padding: 20px 22px;
+  overflow-y: auto;
+}
+
+.audit-card__art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.art-frame {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+.art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+.art-fallback {
+  font-size: 96px;
+  color: var(--text-on-accent);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.art-meta {
+  text-align: center;
+}
+.art-glyph {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.art-id {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.audit-card__info {
+  min-width: 0;
+}
+.info-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.info-grid__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.info-grid__row--full {
+  grid-column: 1 / -1;
+}
+.info-grid__row dt {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.info-grid__row dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.audit-card__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-base);
+}
+
+.card-btn {
+  height: 36px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-hover);
+  color: var(--text-faint);
+}
+.card-btn:hover:not(:disabled) {
+  background: var(--bg-elevated);
+}
+.card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.card-btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+.card-btn--ok {
+  background: var(--accent-green);
+  color: var(--text-on-accent);
+}
+.card-btn--ok:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+.card-btn--no {
+  background: var(--accent-red);
+  color: var(--text-on-accent);
+}
+.card-btn--no:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.pop-enter-active,
+.pop-leave-active {
+  transition: all 0.25s ease;
+}
+.pop-enter-from,
+.pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/* === 卡片内驳回弹层 === */
+.reject-dialog {
+  background: var(--bg-card);
+  border-radius: 12px;
+  width: 420px;
+  max-width: 90vw;
+  padding: 22px;
+  box-shadow: var(--shadow-md);
+}
+.reject-dialog h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.reject-dialog__area {
+  width: 100%;
+  min-height: 96px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-base);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.reject-dialog__area:focus {
+  outline: none;
+  border-color: var(--accent-green);
+}
+.reject-dialog__btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+.pill-btn {
+  height: 36px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--bg-hover);
+  color: var(--text-faint);
+  transition: all 0.2s;
+}
+.pill-btn:hover:not(:disabled) {
+  background: var(--bg-elevated);
+}
+.pill-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pill-btn--no {
+  background: var(--accent-red);
+  color: var(--text-on-accent);
+}
+.pill-btn--no:hover:not(:disabled) {
+  filter: brightness(0.92);
 }
 </style>

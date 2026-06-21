@@ -9,7 +9,28 @@
             <span class="text-field__glyph">&#128269;</span>
             <input v-model="keyword" class="text-field__ctrl" placeholder="搜索字符/用户..." />
           </div>
+          <!-- 状态筛选 -->
+          <div class="text-field text-field--select">
+            <span class="text-field__glyph">&#128196;</span>
+            <select v-model="statusFilter" class="text-field__ctrl" @change="handleQuery">
+              <option value="">全部状态</option>
+              <option value="PENDING">待审核</option>
+              <option value="APPROVED">已通过</option>
+              <option value="REJECTED">已驳回</option>
+            </select>
+          </div>
+          <!-- 日期范围 -->
+          <div class="text-field">
+            <span class="text-field__glyph">&#128197;</span>
+            <input
+              v-model="dateRange"
+              class="text-field__ctrl"
+              type="text"
+              placeholder="YYYY-MM-DD ~ YYYY-MM-DD"
+            />
+          </div>
           <button class="pill-btn pill-btn--go" @click="handleQuery">查询</button>
+          <button class="pill-btn" @click="resetFilters">重置</button>
           <button
             class="pill-btn pill-btn--ok"
             :class="{ 'is-disabled': pickedIds.size === 0 }"
@@ -65,8 +86,16 @@
           </label>
 
           <div class="review-entry__thumb">
-            <div class="thumb-glyph" :style="{ background: item.bg }">
-              <span>{{ item.glyph }}</span>
+            <div class="thumb-glyph" :style="item.fileUrl ? {} : { background: item.bg }">
+              <img
+                v-if="item.fileUrl"
+                :src="item.fileUrl"
+                :alt="item.glyph"
+                class="thumb-img"
+                @error="onImgError($event, item)"
+                @load="onImgLoad($event)"
+              />
+              <span v-else>{{ item.glyph }}</span>
             </div>
           </div>
 
@@ -169,11 +198,14 @@ interface ReviewRow {
   id: number
   glyph: string
   bg: string
+  fileUrl: string
   submitter: string
   strokes: number
   duration: number
   time: string
   remark: string
+  status: number
+  createTime: string
 }
 
 const GRADIENT_PALETTE = [
@@ -187,8 +219,22 @@ const GRADIENT_PALETTE = [
   'linear-gradient(135deg,#14b8a6,#5eead4)',
 ]
 
+/** 状态值映射（后端 0/1/2 数字或全大写枚举字符串） */
+function statusToNumber(s: number | string | undefined): number {
+  if (typeof s === 'number') return s
+  if (typeof s === 'string') {
+    const v = s.toUpperCase()
+    if (v === 'PENDING' || v === '0') return 0
+    if (v === 'APPROVED' || v === '1') return 1
+    if (v === 'REJECTED' || v === '2') return 2
+  }
+  return 0
+}
+
 /* ========================= 状态 ========================= */
 const keyword = ref('')
+const statusFilter = ref('')
+const dateRange = ref('')
 const page = ref(1)
 const pageSize = 10
 
@@ -207,13 +253,48 @@ const rejectTarget = ref<ReviewRow | null>(null)
 const toast = ref('')
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
+
+
 /* ========================= 计算属性 ========================= */
+function parseDateRange(): { from: string; to: string } | null {
+  const v = dateRange.value.trim()
+  if (!v) return null
+  // 支持 "YYYY-MM-DD ~ YYYY-MM-DD" / "YYYY-MM-DD - YYYY-MM-DD" / "YYYY-MM-DD,YYYY-MM-DD"
+  const parts = v
+    .split(/[~\-,，\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (parts.length === 0) return null
+  const ok = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
+  if (parts.length === 1 && ok(parts[0])) {
+    return { from: parts[0], to: parts[0] }
+  }
+  if (parts.length === 2 && ok(parts[0]) && ok(parts[1])) {
+    return { from: parts[0], to: parts[1] }
+  }
+  return null
+}
+
+const dateFilter = computed(() => parseDateRange())
+
 const filteredList = computed(() => {
-  if (!keyword.value) return pendingList.value
-  const kw = keyword.value.toLowerCase()
-  return pendingList.value.filter(
-    (i) => i.glyph.includes(kw) || i.submitter.toLowerCase().includes(kw)
-  )
+  let list = pendingList.value
+  if (keyword.value) {
+    const kw = keyword.value.toLowerCase()
+    list = list.filter((i) => i.glyph.includes(kw) || i.submitter.toLowerCase().includes(kw))
+  }
+  if (statusFilter.value) {
+    const target = statusToNumber(statusFilter.value)
+    list = list.filter((i) => i.status === target)
+  }
+  if (dateFilter.value) {
+    const { from, to } = dateFilter.value
+    list = list.filter((i) => {
+      const t = (i.createTime || '').substring(0, 10)
+      return t >= from && t <= to
+    })
+  }
+  return list
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
@@ -234,11 +315,14 @@ function mapSampleVO(vo: SampleVO): ReviewRow {
     id: Number(vo.id),
     glyph: vo.char || '?',
     bg: pickGradient(Number(vo.charId)),
+    fileUrl: vo.fileUrl || '',
     submitter: `user#${vo.userId}`,
     strokes: 0,
     duration: 0,
     time: formatTime(vo.createTime),
     remark: vo.rejectReason || '',
+    status: statusToNumber(vo.status),
+    createTime: vo.createTime || '',
   }
 }
 
@@ -248,6 +332,20 @@ function showToastMsg(msg: string) {
   toastTimer = setTimeout(() => {
     toast.value = ''
   }, 2000)
+}
+
+/**
+ * 图片加载失败：清空该行的 fileUrl，让模板回退到渐变 + 文字。
+ * 避免后端图片不存在时显示破图标。
+ */
+function onImgError(_evt: Event, item: ReviewRow) {
+  if (item.fileUrl) {
+    item.fileUrl = ''
+  }
+}
+
+function onImgLoad(_evt: Event) {
+  // 加载成功占位（无需额外处理，预留扩展）
 }
 
 /* ========================= 数据加载 ========================= */
@@ -274,6 +372,14 @@ function togglePick(id: number) {
 }
 
 function handleQuery() {
+  page.value = 1
+  loadPending()
+}
+
+function resetFilters() {
+  keyword.value = ''
+  statusFilter.value = ''
+  dateRange.value = ''
   page.value = 1
   loadPending()
 }
@@ -468,6 +574,39 @@ onMounted(loadPending)
 
 .text-field__ctrl::placeholder {
   color: var(--text-dim);
+}
+
+/* select 用 .text-field__ctrl 但需要保留原生下拉箭头 */
+.text-field--select .text-field__ctrl {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 22px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+  background-position:
+    calc(100% - 12px) center,
+    calc(100% - 8px) center;
+  background-size:
+    4px 4px,
+    4px 4px;
+  background-repeat: no-repeat;
+}
+.text-field--select .text-field__ctrl option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* 真实样本图 */
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: inherit;
+  background: #fff;
 }
 
 .pill-btn {

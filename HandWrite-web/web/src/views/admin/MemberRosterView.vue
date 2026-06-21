@@ -97,6 +97,62 @@
         </div>
       </footer>
     </div>
+
+    <!-- 编辑身份弹窗 -->
+    <transition name="pop">
+      <div v-if="showEditModal" class="edit-mask" @click.self="closeEditModal">
+        <div class="edit-dialog">
+          <header class="edit-dialog__head">
+            <h3>编辑成员身份</h3>
+            <button class="edit-dialog__close" @click="closeEditModal">✕</button>
+          </header>
+
+          <div class="edit-dialog__body">
+            <div class="edit-target">
+              <div
+                class="avatar-circle avatar-circle--sm"
+                :style="{ background: editTarget?.avatarColor }"
+              >
+                {{ editTarget?.name?.charAt(0) }}
+              </div>
+              <div class="edit-target__info">
+                <div class="edit-target__name">{{ editTarget?.name }}</div>
+                <div class="edit-target__handle">@{{ editTarget?.username }}</div>
+              </div>
+            </div>
+
+            <div class="edit-section">
+              <span class="edit-section__label">分配角色（可多选）</span>
+              <div class="role-options">
+                <label
+                  v-for="opt in ROLE_OPTIONS"
+                  :key="opt.key"
+                  class="role-option"
+                  :class="{ 'is-checked': editRoles.includes(opt.key) }"
+                >
+                  <input
+                    type="checkbox"
+                    :value="opt.key"
+                    :checked="editRoles.includes(opt.key)"
+                    @change="toggleEditRole(opt.key)"
+                  />
+                  <span class="role-option__dot" :class="'role-option__dot--' + opt.key"></span>
+                  <span class="role-option__name">{{ opt.label }}</span>
+                  <span class="role-option__hint">{{ opt.hint }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <footer class="edit-dialog__foot">
+            <button class="pill-btn" @click="closeEditModal">取消</button>
+            <button class="pill-btn pill-btn--go" :disabled="saving" @click="saveEdit">
+              {{ saving ? '保存中...' : '保存' }}
+            </button>
+          </footer>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -117,7 +173,7 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listUsers, toggleUserStatus } from '@/api/admin'
+import { listUsers, toggleUserStatus, updateUserRoles } from '@/api/admin'
 import type { AdminUserVO } from '@/api/contracts/user'
 
 /* ========================= 类型与常量 ========================= */
@@ -138,6 +194,24 @@ const ROLE_DISPLAY: Record<string, 'admin' | 'editor' | 'viewer'> = {
   AUDITOR: 'editor',
   USER: 'viewer',
 }
+
+/** 反向映射：本地小写 key → 后端角色编码 */
+const ROLE_BACKEND: Record<'admin' | 'editor' | 'viewer', 'ADMIN' | 'AUDITOR' | 'USER'> = {
+  admin: 'ADMIN',
+  editor: 'AUDITOR',
+  viewer: 'USER',
+}
+
+/** 编辑弹窗中的可选角色 */
+const ROLE_OPTIONS: Array<{
+  key: 'admin' | 'editor' | 'viewer'
+  label: string
+  hint: string
+}> = [
+  { key: 'admin', label: '管理员', hint: '拥有全部后台权限' },
+  { key: 'editor', label: '审核员', hint: '可处理待审核样本' },
+  { key: 'viewer', label: '观察者', hint: '只读访问' },
+]
 
 const AVATAR_PALETTE = [
   '#0d9488',
@@ -160,6 +234,12 @@ const total = ref(0)
 
 const users = ref<RosterRow[]>([])
 const loading = ref(false)
+
+/* ========================= 编辑弹窗状态 ========================= */
+const showEditModal = ref(false)
+const editTarget = ref<RosterRow | null>(null)
+const editRoles = ref<Array<'admin' | 'editor' | 'viewer'>>([])
+const saving = ref(false)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 
@@ -225,7 +305,47 @@ function handleQuery() {
 }
 
 function handleEdit(user: RosterRow) {
-  ElMessage.info(`编辑成员：${user.name}（暂未实现）`)
+  editTarget.value = user
+  editRoles.value = [...user.roles]
+  showEditModal.value = true
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+  editTarget.value = null
+  editRoles.value = []
+}
+
+function toggleEditRole(role: 'admin' | 'editor' | 'viewer') {
+  if (editRoles.value.includes(role)) {
+    editRoles.value = editRoles.value.filter((r) => r !== role)
+  } else {
+    editRoles.value = [...editRoles.value, role]
+  }
+}
+
+async function saveEdit() {
+  if (!editTarget.value) return
+  if (editRoles.value.length === 0) {
+    ElMessage.warning('请至少分配一个角色')
+    return
+  }
+  // 把本地小写 key 转成后端大写编码
+  const backendRoles = editRoles.value.map((r) => ROLE_BACKEND[r])
+  saving.value = true
+  try {
+    const updated = await updateUserRoles(editTarget.value.id, backendRoles)
+    const mapped = mapAdminUserVO(updated)
+    const idx = users.value.findIndex((u) => u.id === editTarget.value!.id)
+    if (idx >= 0) users.value[idx] = mapped
+    ElMessage.success(`已更新「${editTarget.value.name}」的身份`)
+    closeEditModal()
+  } catch (err) {
+    console.error('[MemberRoster] 更新用户角色失败', err)
+    ElMessage.error('更新身份失败：后端可能尚未提供 PUT /v1/admin/users/{id}/roles')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleToggle(user: RosterRow) {
@@ -607,5 +727,205 @@ onMounted(loadUsers)
   background: var(--accent-green);
   color: var(--text-on-accent);
   font-weight: 600;
+}
+
+/* === 编辑身份弹窗 === */
+.edit-mask {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-mask);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.edit-dialog {
+  background: var(--bg-card);
+  border-radius: 14px;
+  width: 480px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.edit-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-base);
+}
+
+.edit-dialog__head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.edit-dialog__close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.edit-dialog__close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.edit-dialog__body {
+  padding: 20px 22px;
+}
+
+.edit-target {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-base);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.avatar-circle--sm {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.edit-target__info {
+  min-width: 0;
+}
+
+.edit-target__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.edit-target__handle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-section__label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.role-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-base);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.role-option:hover {
+  background: var(--bg-hover);
+}
+.role-option.is-checked {
+  background: var(--bg-soft);
+  border-color: var(--accent-green);
+}
+.role-option input {
+  display: none;
+}
+
+.role-option__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.role-option__dot--admin {
+  background: var(--accent-red);
+}
+.role-option__dot--editor {
+  background: var(--accent-green);
+}
+.role-option__dot--viewer {
+  background: var(--accent-blue);
+}
+
+.role-option__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.role-option__hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+.edit-dialog__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-base);
+}
+
+.pill-btn {
+  height: 36px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-hover);
+  color: var(--text-faint);
+}
+.pill-btn:hover:not(:disabled) {
+  background: var(--bg-elevated);
+}
+.pill-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pill-btn--go {
+  background: var(--accent-green);
+  color: var(--text-on-accent);
+}
+.pill-btn--go:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.pop-enter-active,
+.pop-leave-active {
+  transition: all 0.25s ease;
+}
+.pop-enter-from,
+.pop-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>
