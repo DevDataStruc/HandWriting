@@ -46,6 +46,18 @@ public enum ErrorCode {
     SIGN_INVALID(2501, "签名已过期或无效"),
     PERMISSION_DENIED(2601, "权限不足"),
 
+    // 2700 密码恢复 / 2FA / 密保
+    RECOVERY_TOKEN_INVALID(2700, "密码恢复凭证无效或已过期"),
+    RECOVERY_TOKEN_USED(2701, "密码恢复凭证已被使用"),
+    RECOVERY_METHOD_UNAVAILABLE(2702, "当前账号暂未启用该恢复方式"),
+    TOTP_NOT_BOUND(2703, "尚未绑定动态口令"),
+    TOTP_ALREADY_BOUND(2704, "已绑定动态口令，请先解绑"),
+    TOTP_CODE_INVALID(2705, "动态口令错误"),
+    TOTP_RECOVERY_CODE_INVALID(2706, "恢复码无效或已被使用"),
+    SECURITY_QUESTION_NOT_SET(2707, "尚未设置密保问题"),
+    SECURITY_QUESTION_ANSWER_INVALID(2708, "密保问题答案错误"),
+    SECURITY_QUESTION_ALREADY_SET(2709, "已设置密保问题，请先清空"),
+
     // 5xxx 服务端
     INTERNAL_ERROR(5000, "服务异常，请稍后再试"),
     DB_ERROR(5100, "数据库异常"),

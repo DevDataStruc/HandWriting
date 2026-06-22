@@ -86,7 +86,7 @@ public class AppProperties {
 
     @Data
     public static class RateLimit {
-        private int authPerMinute = 20;
-        private int uploadPerMinute = 60;
+        private int authPerMinute = 200;
+        private int uploadPerMinute = 600;
     }
 }

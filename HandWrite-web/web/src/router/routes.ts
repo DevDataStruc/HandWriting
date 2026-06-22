@@ -81,6 +81,29 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '样本详情', requiresAuth: true, roles: ALL_ROLES },
         props: true,
       },
+      {
+        path: 'profile',
+        component: () => import('@/views/profile/ProfileLayout.vue'),
+        meta: { title: '个人中心', requiresAuth: true, roles: ALL_ROLES },
+        children: [
+          {
+            path: '',
+            redirect: { name: 'TotpSetup' },
+          },
+          {
+            path: 'totp',
+            name: 'TotpSetup',
+            component: () => import('@/views/profile/TotpSetupView.vue'),
+            meta: { title: '动态口令', requiresAuth: true, roles: ALL_ROLES },
+          },
+          {
+            path: 'security-questions',
+            name: 'SecurityQuestions',
+            component: () => import('@/views/profile/SecurityQuestionsView.vue'),
+            meta: { title: '密保问题', requiresAuth: true, roles: ALL_ROLES },
+          },
+        ],
+      },
     ],
   },
   {

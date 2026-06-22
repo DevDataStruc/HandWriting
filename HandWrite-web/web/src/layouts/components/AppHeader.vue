@@ -92,7 +92,7 @@ function toggleLocale() {
 }
 
 function goProfile() {
-  router.push('/sample/my')
+  router.push({ name: 'TotpSetup' })
 }
 function goMySamples() {
   router.push('/sample/my')

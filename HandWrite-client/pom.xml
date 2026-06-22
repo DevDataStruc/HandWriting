@@ -166,6 +166,18 @@
             <version>1.6.2</version>
         </dependency>
 
+        <!-- ZXing: 二维码生成（用于 2FA 绑定） -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
         <!-- Office 文件解析（Excel / Word），用于字符字典批量导入 -->
         <dependency>
             <groupId>org.apache.poi</groupId>

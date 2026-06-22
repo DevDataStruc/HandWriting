@@ -160,7 +160,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
   Cellphone,
   ChatDotRound,
@@ -170,7 +170,7 @@ import {
 } from '@element-plus/icons-vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
-import { getCaptcha } from '@/api/auth'
+import { getCaptcha, getTotpStatus } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -230,6 +230,8 @@ async function handleSubmit() {
         message: '登录成功，欢迎回来！',
         duration: 2000,
       })
+      // 首次登录提示：检查是否设置密码找回方式
+      void promptRecoverySetup()
       const redirect = (route.query.redirect as string) || '/'
       router.replace(redirect)
     } catch (err) {
@@ -238,6 +240,34 @@ async function handleSubmit() {
       loading.value = false
     }
   })
+}
+
+/**
+ * 首次登录提示：未绑定 2FA 且未设置密保时，建议用户去个人中心配置。
+ * 已在弹窗中给出"稍后设置"选项，避免阻塞流程。
+ */
+async function promptRecoverySetup() {
+  try {
+    const status = await getTotpStatus()
+    if (status.bound) return
+  } catch {
+    return
+  }
+  // 仅在用户停留时间较短的提示窗，避免每次都强弹
+  try {
+    await ElMessageBox.confirm(
+      '你尚未配置密码找回方式（动态口令 / 密保问题）。建议立即设置，避免忘记密码时无法找回。',
+      '首次登录提示',
+      {
+        type: 'warning',
+        confirmButtonText: '立即设置',
+        cancelButtonText: '稍后',
+      }
+    )
+    router.push({ name: 'TotpSetup' })
+  } catch {
+    /* cancel - 用户选择稍后 */
+  }
 }
 
 onMounted(() => {

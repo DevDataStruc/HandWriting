@@ -94,7 +94,7 @@ function doRefresh(): Promise<string> {
   if (refreshing) return refreshing
   const rt = storage.getString(REFRESH_TOKEN_KEY)
   if (!rt) {
-    return Promise.reject(new ApiError(BusinessCode.REFRESH_TOKEN_INVALID, '未登录'))
+    return Promise.reject(new ApiError(BusinessCode.UNAUTHORIZED, '未登录'))
   }
   refreshing = refreshTokenApi({ refreshToken: rt })
     .then((vo) => {
@@ -164,7 +164,7 @@ instance.interceptors.response.use(
 
     const config = response.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-    // 1101 = AccessToken 过期/无效 → 尝试 refresh + 重发
+    // 1002 = AccessToken 过期/无效 → 尝试 refresh + 重发
     if (
       code === BusinessCode.TOKEN_INVALID &&
       !config._retry &&
@@ -179,46 +179,49 @@ instance.interceptors.response.use(
         }
         return instance.request(config)
       } catch {
-        // refresh 失败 → 交给 1102 路径处理
+        // refresh 失败 → 强制登出
         handleUnauthorized('登录已过期，请重新登录')
-        return Promise.reject(new ApiError(BusinessCode.REFRESH_TOKEN_INVALID, '登录已过期'))
+        return Promise.reject(new ApiError(BusinessCode.UNAUTHORIZED, '登录已过期'))
       }
     }
 
-    // 1102 / 1103 = RefreshToken 失效或缺失 → 强制登出
-    if (code === BusinessCode.REFRESH_TOKEN_INVALID || code === BusinessCode.TOKEN_MISSING) {
+    // 1001 = 未登录 / 1002 = /auth/refresh 自身失败 → 强制登出
+    if (
+      code === BusinessCode.UNAUTHORIZED ||
+      (code === BusinessCode.TOKEN_INVALID && config.url?.includes('/auth/refresh'))
+    ) {
       handleUnauthorized(msg)
       return Promise.reject(new ApiError(code, msg || '请重新登录'))
     }
 
-    // 1104 = 无权限
+    // 1003 = 无权限
     if (code === BusinessCode.FORBIDDEN) {
       ElMessage.error(msg || '无访问权限')
       return Promise.reject(new ApiError(code, msg || '无访问权限', data))
     }
 
-    // 1002 = 验证码错误（仅登录页需要，向上抛）
+    // 1007 = 验证码错误（仅登录页需要，向上抛）
     if (code === BusinessCode.CAPTCHA_INVALID) {
       return Promise.reject(new ApiError(code, msg || '验证码错误', data))
     }
 
-    // 1005 = 用户名已存在（仅注册页需要，向上抛）
-    if (code === BusinessCode.USERNAME_EXISTS) {
+    // 2004 = 用户名已存在（仅注册页需要，向上抛）
+    if (code === BusinessCode.USER_ALREADY_EXISTS) {
       return Promise.reject(new ApiError(code, msg || '用户名已被占用', data))
     }
 
-    // 2001 = 样本不存在
-    if (code === BusinessCode.SAMPLE_NOT_FOUND) {
+    // 2101 = 样本不存在
+    if (code === BusinessCode.SAMPLE_NOT_EXISTS) {
       return Promise.reject(new ApiError(code, msg || '样本不存在', data))
     }
 
-    // 3001 / 2005 = 参数/类型错误
-    if (code === BusinessCode.PARAM_INVALID || code === BusinessCode.FILE_TYPE_INVALID) {
+    // 1000 = 参数错误 / 2402 = 文件类型错误
+    if (code === BusinessCode.BAD_REQUEST || code === BusinessCode.FILE_TYPE_INVALID) {
       ElMessage.error(msg || '参数错误')
       return Promise.reject(new ApiError(code, msg || '参数错误', data))
     }
 
-    // 4001 = 频率超限
+    // 1006 = 频率超限
     if (code === BusinessCode.RATE_LIMIT) {
       ElMessage.warning(msg || '操作过于频繁，请稍后重试')
       return Promise.reject(new ApiError(code, msg || '操作过于频繁', data))
@@ -228,15 +231,15 @@ instance.interceptors.response.use(
     if (
       code === BusinessCode.INTERNAL_ERROR ||
       code === BusinessCode.DB_ERROR ||
-      code === BusinessCode.REDIS_ERROR ||
+      code === BusinessCode.REMOTE_ERROR ||
       code === BusinessCode.CONFIG_ERROR
     ) {
       ElMessage.error(msg || '服务异常，请稍后重试')
       return Promise.reject(new ApiError(code, msg || '服务异常', data))
     }
 
-    // 2004 = 文件过大
-    if (code === BusinessCode.FILE_TOO_LARGE) {
+    // 2403 = 文件过大
+    if (code === BusinessCode.FILE_SIZE_EXCEED) {
       ElMessage.error(msg || '文件过大，请压缩后再传')
       return Promise.reject(new ApiError(code, msg || '文件过大', data))
     }

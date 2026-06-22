@@ -42,6 +42,10 @@ public final class CommonConstants {
     public static final String REDIS_KEY_RATELIMIT = "ratelimit:%s:%s";
     public static final String REDIS_KEY_DICT_CACHE = "dict:chars:%s";
     public static final String REDIS_KEY_STATS_DAILY = "stats:daily:%s";
+    /** 密码恢复 challenge -> userId 映射（短 TTL） */
+    public static final String REDIS_KEY_RECOVERY_CHALLENGE = "auth:recovery:challenge:%s";
+    /** 密码恢复 token -> userId 映射（短 TTL） */
+    public static final String REDIS_KEY_RECOVERY_TOKEN = "auth:recovery:token:%s";
 
     /** 文件存储桶 */
     public static final String BUCKET_COLLECT = "COLLECT";

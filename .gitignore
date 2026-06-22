@@ -27,8 +27,8 @@ Thumbs.db
 *.sublime-workspace
 
 # ---------------- 构建产物 ----------------
-/target
-**/target
+/target/*
+**/target/*
 /build/
 **/build/
 /dist/
