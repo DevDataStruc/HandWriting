@@ -63,7 +63,9 @@ public class SecurityConfig {
                             "/swagger-ui.html",
                             "/actuator/health/**",
                             "/actuator/info",
-                            "/actuator/prometheus"
+                            "/actuator/prometheus",
+                            // API 端点浏览器（自描述页面，免登录）
+                            "/endpoints"
                     ).permitAll()
                     // 本地存储文件访问：UUID 文件名自带安全，对外公开（与原对象存储行为一致）
                     .requestMatchers(HttpMethod.GET, "/v1/file/local/**").permitAll()

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HandWrite · API 端点浏览器</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1f242d;
+      --border: #2a313c;
+      --text: #e6e9ef;
+      --muted: #8a93a3;
+      --accent: #6aa6ff;
+      --get: #3fb950;
+      --post: #58a6ff;
+      --put: #d29922;
+      --delete: #f85149;
+      --patch: #bc8cff;
+      --admin: #ff7b72;
+      --auth: #79c0ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% -10%, #1c2230 0%, var(--bg) 60%) fixed;
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+    header.hero {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .title h1 {
+      font-size: 28px; margin: 0 0 6px; letter-spacing: 0.5px;
+      background: linear-gradient(90deg, #6aa6ff 0%, #bc8cff 50%, #f78c8c 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .title p { margin: 0; color: var(--muted); font-size: 14px; }
+    .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+    .chip {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--muted);
+    }
+    .chip b { color: var(--text); margin-left: 4px; }
+    .toolbar {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(15, 17, 21, 0.85); backdrop-filter: blur(8px);
+      padding: 14px 0; margin: 0 0 24px;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .toolbar.scrolled { border-color: var(--border); }
+    .search {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px;
+    }
+    .search input {
+      flex: 1; background: transparent; border: 0; outline: 0;
+      color: var(--text); font-size: 14px;
+    }
+    .search input::placeholder { color: var(--muted); }
+    .search .hint { color: var(--muted); font-size: 12px; }
+    .filters { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .filter {
+      cursor: pointer; user-select: none;
+      padding: 5px 12px; border-radius: 999px; font-size: 12px;
+      background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
+      transition: 0.15s;
+    }
+    .filter:hover { color: var(--text); }
+    .filter.active { color: #fff; border-color: transparent; }
+    .filter.active[data-m="GET"]    { background: var(--get); }
+    .filter.active[data-m="POST"]   { background: var(--post); }
+    .filter.active[data-m="PUT"]    { background: var(--put); }
+    .filter.active[data-m="DELETE"] { background: var(--delete); }
+    .filter.active[data-m="PATCH"]  { background: var(--patch); }
+    section.module {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px 8px;
+      margin-bottom: 18px;
+    }
+    section.module > h2 {
+      display: flex; align-items: center; gap: 10px;
+      margin: 0 0 12px; font-size: 16px; color: var(--text);
+    }
+    section.module > h2 .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 12px var(--accent);
+    }
+    section.module > h2 .count {
+      margin-left: auto; color: var(--muted); font-weight: 400; font-size: 12px;
+    }
+    .endpoint {
+      display: grid;
+      grid-template-columns: 78px 1fr auto;
+      gap: 12px; align-items: center;
+      padding: 10px 8px;
+      border-radius: 10px;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .endpoint:hover { background: var(--panel-2); }
+    .method {
+      display: inline-block; text-align: center;
+      font-weight: 700; font-size: 12px; letter-spacing: 0.4px;
+      padding: 4px 8px; border-radius: 6px; color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .method.GET    { background: rgba(63,185,80,0.18);  color: var(--get);    border: 1px solid rgba(63,185,80,0.45); }
+    .method.POST   { background: rgba(88,166,255,0.18); color: var(--post);   border: 1px solid rgba(88,166,255,0.45); }
+    .method.PUT    { background: rgba(210,153,34,0.18); color: var(--put);    border: 1px solid rgba(210,153,34,0.45); }
+    .method.DELETE { background: rgba(248,81,73,0.18);  color: var(--delete); border: 1px solid rgba(248,81,73,0.45); }
+    .method.PATCH  { background: rgba(188,140,255,0.18);color: var(--patch);  border: 1px solid rgba(188,140,255,0.45); }
+    .path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13.5px; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .desc { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .tag {
+      font-size: 11px; padding: 3px 8px; border-radius: 6px;
+      background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
+    }
+    .tag.admin   { color: var(--admin); border-color: rgba(255,123,114,0.4); }
+    .tag.auditor { color: var(--patch); border-color: rgba(188,140,255,0.4); }
+    .tag.auth    { color: var(--auth);  border-color: rgba(121,192,255,0.4); }
+    .tag.public  { color: var(--get);   border-color: rgba(63,185,80,0.4); }
+    .empty {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+      background: var(--panel); border: 1px dashed var(--border);
+      border-radius: 14px;
+    }
+    .toast {
+      position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px);
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      padding: 8px 14px; border-radius: 8px; font-size: 13px;
+      opacity: 0; pointer-events: none; transition: 0.2s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 40px; }
+    @media (max-width: 720px) {
+      .endpoint { grid-template-columns: 70px 1fr; }
+      .tags { grid-column: 1 / -1; justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="title">
+        <h1>HandWrite · API 端点浏览器</h1>
+        <p>展示后端 Spring Boot 服务暴露的全部 REST 端点，点击路径可复制</p>
+      </div>
+      <div class="stats">
+        <span class="chip">端点总数 <b id="stat-total">0</b></span>
+        <span class="chip">模块数 <b id="stat-modules">0</b></span>
+        <span class="chip">无需鉴权 <b id="stat-public">0</b></span>
+      </div>
+    </header>
+
+    <div class="toolbar" id="toolbar">
+      <div class="search">
+        <span style="color: var(--muted)">🔎</span>
+        <input id="search" type="search" placeholder="搜索路径、方法、描述，例如：sample / POST / 上传" autocomplete="off" />
+        <span class="hint">支持中文 / 路径 / 关键字</span>
+      </div>
+      <div class="filters" id="filters">
+        <span class="filter active" data-m="ALL">全部</span>
+        <span class="filter" data-m="GET">GET</span>
+        <span class="filter" data-m="POST">POST</span>
+        <span class="filter" data-m="PUT">PUT</span>
+        <span class="filter" data-m="DELETE">DELETE</span>
+        <span class="filter" data-m="PATCH">PATCH</span>
+        <span class="filter" data-m="PUBLIC">仅公共</span>
+        <span class="filter" data-m="ADMIN">仅管理员</span>
+      </div>
+    </div>
+
+    <main id="modules"></main>
+    <div class="empty" id="empty" style="display:none">没有匹配的端点，换个关键字试试。</div>
+
+    <footer>HandWrite-client · Spring Boot 3.2 · 路径 <code>/endpoints</code></footer>
+  </div>
+
+  <div class="toast" id="toast">已复制</div>
+
+  <script>
+    // 数据：与后端控制器 1:1 对应（由 [ApiExplorerController] 服务端生成时注入亦可）
+    const DATA = [
+      { module: "Actuator",  method: "GET",    path: "/actuator/health/**",          desc: "健康检查（无需登录）",     auth: "public" },
+      { module: "Actuator",  method: "GET",    path: "/actuator/info",               desc: "应用信息（无需登录）",     auth: "public" },
+      { module: "Actuator",  method: "GET",    path: "/actuator/prometheus",         desc: "Prometheus 监控指标",    auth: "public" },
+
+      { module: "鉴权 · Auth", method: "GET",    path: "/v1/auth/captcha",            desc: "获取图形验证码",           auth: "public" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/login",              desc: "用户登录",               auth: "public" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/register",           desc: "用户注册",               auth: "public" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/refresh",            desc: "刷新 Access Token",     auth: "public" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/logout",             desc: "用户注销",               auth: "auth" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/recovery/start",     desc: "密码找回 · 发起",         auth: "public" },
+      { module: "鉴权 · Auth", method: "GET",    path: "/v1/auth/recovery/security-questions", desc: "密码找回 · 获取密保问题", auth: "public" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/recovery/verify-security",     desc: "密码找回 · 校验密保",   auth: "public" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/recovery/verify-totp",        desc: "密码找回 · 校验 TOTP",  auth: "public" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/recovery/reset",              desc: "密码找回 · 重置密码",   auth: "public" },
+      { module: "鉴权 · Auth", method: "GET",    path: "/v1/auth/totp/status",        desc: "查询 TOTP 绑定状态",       auth: "auth" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/totp/setup",         desc: "生成 TOTP 密钥与二维码",     auth: "auth" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/totp/bind",          desc: "绑定 TOTP（启用二次验证）",   auth: "auth" },
+      { module: "鉴权 · Auth", method: "DELETE", path: "/v1/auth/totp/bind",          desc: "解绑 TOTP",               auth: "auth" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/totp/verify",        desc: "校验 TOTP 动态码",         auth: "auth" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/totp/verify-recovery", desc: "使用恢复码登录",         auth: "auth" },
+      { module: "鉴权 · Auth", method: "GET",    path: "/v1/auth/security-questions", desc: "查看当前用户密保问题",       auth: "auth" },
+      { module: "鉴权 · Auth", method: "POST",   path: "/v1/auth/security-questions", desc: "设置/更新密保问题",         auth: "auth" },
+      { module: "鉴权 · Auth", method: "DELETE", path: "/v1/auth/security-questions", desc: "清除密保问题",             auth: "auth" },
+
+      { module: "用户 · User", method: "GET", path: "/v1/user/profile", desc: "获取个人信息", auth: "auth" },
+      { module: "用户 · User", method: "PUT", path: "/v1/user/profile", desc: "修改个人信息", auth: "auth" },
+
+      { module: "文件 · File", method: "POST", path: "/v1/file/sign",            desc: "获取对象存储直传签名",    auth: "auth" },
+      { module: "文件 · File", method: "GET",  path: "/v1/file/local/**",        desc: "本地存储文件直读（公开）", auth: "public" },
+
+      { module: "样本 · Sample", method: "POST",   path: "/v1/sample/upload", desc: "上传样本（multipart）",    auth: "auth" },
+      { module: "样本 · Sample", method: "GET",    path: "/v1/sample/page",   desc: "分页查询我的样本",         auth: "auth" },
+      { module: "样本 · Sample", method: "GET",    path: "/v1/sample/{id}",   desc: "样本详情",                auth: "auth" },
+      { module: "样本 · Sample", method: "DELETE", path: "/v1/sample/{id}",   desc: "删除样本",                auth: "auth" },
+
+      { module: "字典 · Dict",   method: "GET", path: "/v1/dict/chars",      desc: "分页查询字符字典",     auth: "auth" },
+      { module: "字典 · Dict",   method: "GET", path: "/v1/dict/chars/list", desc: "按分类列出字符",       auth: "auth" },
+
+      { module: "字典管理 · Admin", method: "GET",    path: "/v1/admin/dict/chars/{id}",          desc: "查看字符详情",       auth: "admin" },
+      { module: "字典管理 · Admin", method: "POST",   path: "/v1/admin/dict/chars",                desc: "新建字符",           auth: "admin" },
+      { module: "字典管理 · Admin", method: "PUT",    path: "/v1/admin/dict/chars/{id}",          desc: "更新字符",           auth: "admin" },
+      { module: "字典管理 · Admin", method: "DELETE", path: "/v1/admin/dict/chars/{id}",          desc: "删除字符",           auth: "admin" },
+      { module: "字典管理 · Admin", method: "POST",   path: "/v1/admin/dict/chars/batch",         desc: "批量新建字符",       auth: "admin" },
+      { module: "字典管理 · Admin", method: "POST",   path: "/v1/admin/dict/chars/import/json",   desc: "JSON 导入字符",      auth: "admin" },
+      { module: "字典管理 · Admin", method: "POST",   path: "/v1/admin/dict/chars/import/file",   desc: "文件导入字符（multipart）", auth: "admin" },
+      { module: "字典管理 · Admin", method: "POST",   path: "/v1/admin/dict/chars/import/preview", desc: "导入预览（不落库）", auth: "admin" },
+
+      { module: "审核 · Audit", method: "GET",  path: "/v1/audit/pending",     desc: "待审核列表",         auth: "auditor" },
+      { module: "审核 · Audit", method: "GET",  path: "/v1/audit/history",     desc: "审核历史",           auth: "auditor" },
+      { module: "审核 · Audit", method: "POST", path: "/v1/audit/{id}/approve", desc: "审核通过",          auth: "auditor" },
+      { module: "审核 · Audit", method: "POST", path: "/v1/audit/{id}/reject",  desc: "审核驳回",          auth: "auditor" },
+
+      { module: "统计 · Stats", method: "GET", path: "/v1/stats/overview",            desc: "总览数据",         auth: "auth" },
+      { module: "统计 · Stats", method: "GET", path: "/v1/stats/trend",               desc: "样本趋势",         auth: "auth" },
+      { module: "统计 · Stats", method: "GET", path: "/v1/stats/status-distribution", desc: "状态分布",         auth: "auth" },
+      { module: "统计 · Stats", method: "GET", path: "/v1/stats/top-contributors",    desc: "贡献者排行",       auth: "auth" },
+      { module: "统计 · Stats", method: "GET", path: "/v1/stats/dict-progress",       desc: "字典收录进度",     auth: "auth" },
+
+      { module: "公共统计 · Public", method: "GET", path: "/v1/public/stats/overview", desc: "门户首页总览（免登录）", auth: "public" },
+
+      { module: "用户管理 · Admin", method: "GET", path: "/v1/admin/users",          desc: "用户列表",       auth: "admin" },
+      { module: "用户管理 · Admin", method: "PUT", path: "/v1/admin/users/{id}/roles", desc: "修改用户角色", auth: "admin" }
+    ];
+
+    const $ = (s, el = document) => el.querySelector(s);
+    const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+
+    const state = { q: "", m: "ALL" };
+
+    const authLabel = { public: "公共", auth: "需登录", admin: "ADMIN", auditor: "审核员" };
+
+    function tag(auth) {
+      const t = document.createElement("span");
+      t.className = "tag " + auth;
+      t.textContent = authLabel[auth] || auth;
+      return t;
+    }
+
+    function render() {
+      const root = $("#modules");
+      root.innerHTML = "";
+
+      const filtered = DATA.filter(d => {
+        if (state.m === "ALL" || state.m === "PUBLIC" || state.m === "ADMIN") {
+          if (state.m === "PUBLIC" && d.auth !== "public") return false;
+          if (state.m === "ADMIN"  && !(d.auth === "admin" || d.auth === "auditor")) return false;
+        } else if (d.method !== state.m) {
+          return false;
+        }
+        if (!state.q) return true;
+        const q = state.q.toLowerCase();
+        return (d.path + " " + d.method + " " + d.desc + " " + d.module).toLowerCase().includes(q);
+      });
+
+      // 分组
+      const groups = new Map();
+      filtered.forEach(d => {
+        if (!groups.has(d.module)) groups.set(d.module, []);
+        groups.get(d.module).push(d);
+      });
+
+      groups.forEach((list, name) => {
+        const sec = document.createElement("section");
+        sec.className = "module";
+        const h = document.createElement("h2");
+        h.innerHTML = '<span class="dot"></span><span></span><span class="count"></span>';
+        h.children[1].textContent = name;
+        h.children[2].textContent = list.length + " 个端点";
+        sec.appendChild(h);
+
+        list.forEach(d => {
+          const row = document.createElement("div");
+          row.className = "endpoint";
+          row.title = "点击复制路径";
+
+          const m = document.createElement("span");
+          m.className = "method " + d.method;
+          m.textContent = d.method;
+
+          const mid = document.createElement("div");
+          const p = document.createElement("div");
+          p.className = "path"; p.textContent = d.path;
+          const desc = document.createElement("div");
+          desc.className = "desc"; desc.textContent = d.desc;
+          mid.appendChild(p); mid.appendChild(desc);
+
+          const tags = document.createElement("div");
+          tags.className = "tags";
+          tags.appendChild(tag(d.auth));
+
+          row.appendChild(m); row.appendChild(mid); row.appendChild(tags);
+          row.addEventListener("click", () => copy(d.path));
+          sec.appendChild(row);
+        });
+
+        root.appendChild(sec);
+      });
+
+      $("#empty").style.display = groups.size === 0 ? "block" : "none";
+
+      $("#stat-total").textContent   = DATA.length;
+      $("#stat-modules").textContent = new Set(DATA.map(d => d.module)).size;
+      $("#stat-public").textContent  = DATA.filter(d => d.auth === "public").length;
+    }
+
+    function copy(text) {
+      const fallback = () => {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta);
+        ta.select(); document.execCommand("copy"); ta.remove();
+      };
+      const after = () => {
+        const t = $("#toast"); t.classList.add("show");
+        clearTimeout(after._t); after._t = setTimeout(() => t.classList.remove("show"), 1100);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(after).catch(() => { fallback(); after(); });
+      } else { fallback(); after(); }
+    }
+
+    // 事件
+    $("#search").addEventListener("input", e => { state.q = e.target.value.trim(); render(); });
+    $$(".filter").forEach(el => el.addEventListener("click", () => {
+      $$(".filter").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+      state.m = el.dataset.m;
+      render();
+    }));
+    window.addEventListener("scroll", () => {
+      $("#toolbar").classList.toggle("scrolled", window.scrollY > 4);
+    });
+
+    render();
+  </script>
+</body>
+</html>

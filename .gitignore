@@ -136,3 +136,6 @@ HandWrite-client/target/classes/com/example/handwriting/security/JwtUtil.class
 HandWrite-client/target/classes/com/example/handwriting/security/SecurityConfig.class
 HandWrite-client/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
 HandWrite-client/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+*.md
+/storage/*
+/figs/*
